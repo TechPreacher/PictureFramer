@@ -21,10 +21,18 @@ targets:
       properties:
         UILaunchScreen: {}
         CFBundleDisplayName: PictureFramer
+        CFBundleShortVersionString: "1.0.0"
+        CFBundleVersion: "1"
+        ITSAppUsesNonExemptEncryption: false
         NSPhotoLibraryAddUsageDescription: >-
           PictureFramer saves your straightened pictures to your photo library.
         UISupportedInterfaceOrientations:
           - UIInterfaceOrientationPortrait
+        UISupportedInterfaceOrientations~ipad:
+          - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationPortraitUpsideDown
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.corti.PictureFramer
