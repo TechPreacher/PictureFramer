@@ -1,0 +1,57 @@
+name: PictureFramer
+options:
+  bundleIdPrefix: com.corti
+  deploymentTarget:
+    iOS: "17.0"
+  createIntermediateGroups: true
+settings:
+  base:
+    SWIFT_VERSION: "5.9"
+    TARGETED_DEVICE_FAMILY: "1"
+    IPHONEOS_DEPLOYMENT_TARGET: "17.0"
+targets:
+  PictureFramer:
+    type: application
+    platform: iOS
+    sources: [Sources]
+    info:
+      path: Sources/Info.plist
+      properties:
+        UILaunchScreen: {}
+        CFBundleDisplayName: PictureFramer
+        NSPhotoLibraryAddUsageDescription: >-
+          PictureFramer saves your straightened pictures to your photo library.
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.corti.PictureFramer
+        CODE_SIGNING_ALLOWED: "NO"
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+  PictureFramerTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources: [Tests]
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: "YES"
+    dependencies:
+      - target: PictureFramer
+  PictureFramerUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources: [UITests]
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: "YES"
+    dependencies:
+      - target: PictureFramer
+schemes:
+  PictureFramer:
+    build:
+      targets:
+        PictureFramer: all
+        PictureFramerTests: [test]
+        PictureFramerUITests: [test]
+    test:
+      targets: [PictureFramerTests, PictureFramerUITests]
