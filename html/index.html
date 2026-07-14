@@ -1,0 +1,230 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PictureFramer — Straighten photos of framed paintings</title>
+<meta name="description" content="PictureFramer for iPhone finds the frame in your photo of a painting, straightens the perspective, and keeps a clean strip of wall around it. Museum photos, perfected.">
+<link rel="canonical" href="https://pictureframer.corti.com/">
+<link rel="icon" type="image/png" href="assets/favicon.png">
+<meta property="og:title" content="PictureFramer — Straighten photos of framed paintings">
+<meta property="og:description" content="Photograph a painting at an angle. Get it back perfectly straight, with a clean strip of wall around the frame.">
+<meta property="og:image" content="https://pictureframer.corti.com/assets/before-after.png">
+<meta property="og:url" content="https://pictureframer.corti.com/">
+<meta property="og:type" content="website">
+<style>
+  :root {
+    --wall: #545b66;
+    --wall-dark: #3e444d;
+    --paper: #f6f4ef;
+    --ink: #23262b;
+    --gold: #b8892f;
+    --gold-light: #d4a952;
+    --muted: #6b7078;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    color: var(--ink);
+    background: var(--paper);
+    line-height: 1.6;
+  }
+  h1, h2, h3 { font-family: Georgia, "Times New Roman", serif; font-weight: 600; line-height: 1.2; }
+
+  /* Hero — the museum wall */
+  .hero {
+    background: linear-gradient(160deg, var(--wall) 0%, var(--wall-dark) 100%);
+    color: #fff;
+    padding: 4.5rem 1.5rem 5rem;
+    text-align: center;
+  }
+  .hero .icon {
+    width: 112px; height: 112px;
+    border-radius: 26px;
+    box-shadow: 0 12px 32px rgba(0,0,0,.45);
+    margin-bottom: 1.5rem;
+  }
+  .hero h1 { font-size: clamp(2.2rem, 5vw, 3.4rem); margin-bottom: .75rem; }
+  .hero .tagline {
+    font-size: clamp(1.05rem, 2.5vw, 1.35rem);
+    color: #d9dce1;
+    max-width: 34em;
+    margin: 0 auto 2.5rem;
+  }
+  .hero .gold { color: var(--gold-light); }
+  .hero img.before-after {
+    max-width: min(720px, 92%);
+    border-radius: 14px;
+    box-shadow: 0 18px 48px rgba(0,0,0,.5);
+  }
+  .hero .availability {
+    margin-top: 2rem;
+    font-size: .95rem;
+    color: #b9bec6;
+  }
+
+  main { max-width: 1080px; margin: 0 auto; padding: 0 1.5rem; }
+
+  section { padding: 4rem 0; }
+  section h2 {
+    font-size: clamp(1.7rem, 3.5vw, 2.3rem);
+    text-align: center;
+    margin-bottom: .6rem;
+  }
+  section .lead {
+    text-align: center;
+    color: var(--muted);
+    max-width: 40em;
+    margin: 0 auto 3rem;
+  }
+
+  /* How it works — screenshots */
+  .steps {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 2.5rem 2rem;
+  }
+  .step { text-align: center; }
+  .step img {
+    width: 100%;
+    max-width: 240px;
+    border-radius: 24px;
+    border: 1px solid #dcd8cf;
+    box-shadow: 0 8px 24px rgba(35,38,43,.14);
+  }
+  .step h3 { margin: 1.1rem 0 .3rem; font-size: 1.15rem; }
+  .step p { font-size: .95rem; color: var(--muted); }
+  .step .num {
+    display: inline-block;
+    background: var(--gold);
+    color: #fff;
+    font-family: Georgia, serif;
+    width: 1.8em; height: 1.8em; line-height: 1.8em;
+    border-radius: 50%;
+    margin-bottom: .8rem;
+  }
+
+  /* Features */
+  .features {
+    background: #fff;
+    border-radius: 18px;
+    padding: 3rem 2.5rem;
+    box-shadow: 0 6px 24px rgba(35,38,43,.08);
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 2rem;
+  }
+  .feature h3 { font-size: 1.1rem; margin-bottom: .35rem; }
+  .feature h3::before { content: "◆ "; color: var(--gold); font-size: .8em; }
+  .feature p { font-size: .95rem; color: var(--muted); }
+
+  /* Support */
+  .support { text-align: center; }
+  .support a.button {
+    display: inline-block;
+    background: var(--gold);
+    color: #fff;
+    text-decoration: none;
+    font-weight: 600;
+    padding: .85rem 2.2rem;
+    border-radius: 999px;
+    transition: background .15s ease;
+  }
+  .support a.button:hover { background: var(--gold-light); }
+
+  footer {
+    background: var(--wall-dark);
+    color: #b9bec6;
+    text-align: center;
+    padding: 2rem 1.5rem;
+    font-size: .9rem;
+  }
+  footer a { color: #d9dce1; }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <img class="icon" src="assets/icon.png" alt="PictureFramer app icon — a gold-framed painting hanging perfectly straight">
+  <h1>PictureFramer</h1>
+  <p class="tagline">Photograph a painting at an angle. Get it back <span class="gold">perfectly straight</span> — frame, wall and all.</p>
+  <img class="before-after" src="assets/before-after.png" alt="Before and after: a crooked photo of a framed painting becomes perfectly rectangular">
+  <p class="availability">For iPhone · iOS 17 or later</p>
+</header>
+
+<main>
+  <section id="how">
+    <h2>Four taps from crooked to straight</h2>
+    <p class="lead">PictureFramer finds the outer edge of the artwork — frame included — corrects rotation and perspective in one pass, and keeps a strip of the real wall around it.</p>
+    <div class="steps">
+      <div class="step">
+        <span class="num">1</span>
+        <img src="assets/screen-01.png" alt="Welcome screen with Choose Photo button" loading="lazy">
+        <h3>Pick a photo</h3>
+        <p>Import any photo of a framed picture or painting from your library.</p>
+      </div>
+      <div class="step">
+        <span class="num">2</span>
+        <img src="assets/screen-02.png" alt="Editor showing automatically detected frame corners with drag handles" loading="lazy">
+        <h3>Automatic detection</h3>
+        <p>The frame is found for you. Nudge a corner by hand if you like.</p>
+      </div>
+      <div class="step">
+        <span class="num">3</span>
+        <img src="assets/screen-03.png" alt="Straightened preview with background margin slider" loading="lazy">
+        <h3>Preview &amp; fine-tune</h3>
+        <p>Set how much wall stays around the frame. Drag to recenter. What you see is what you save.</p>
+      </div>
+      <div class="step">
+        <span class="num">4</span>
+        <img src="assets/screen-04.png" alt="Confirmation screen: saved to your photo library" loading="lazy">
+        <h3>Save</h3>
+        <p>The full-resolution result lands straight back in your photo library.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="features">
+    <h2>Made for museum days</h2>
+    <p class="lead">Everything you photograph from the side, delivered as if you had stood dead center.</p>
+    <div class="features">
+      <div class="feature">
+        <h3>True perspective correction</h3>
+        <p>Rotation, horizontal and vertical keystone fixed in a single transform — not just a crop.</p>
+      </div>
+      <div class="feature">
+        <h3>Real background, not padding</h3>
+        <p>The margin around the frame is the actual wall from your photo, at any width you choose.</p>
+      </div>
+      <div class="feature">
+        <h3>Full resolution</h3>
+        <p>Previews are instant; the saved image is rendered from your original pixels.</p>
+      </div>
+      <div class="feature">
+        <h3>Works without a frame</h3>
+        <p>Unframed canvases straighten just as well — anything with a clean rectangular edge.</p>
+      </div>
+      <div class="feature">
+        <h3>Private by design</h3>
+        <p>Everything happens on your iPhone. No accounts, no uploads, no tracking.</p>
+      </div>
+      <div class="feature">
+        <h3>Shadow-proof</h3>
+        <p>Cast shadow pulling the crop off-center? Drag the preview to recenter it.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="support" class="support">
+    <h2>Support</h2>
+    <p class="lead">Questions, feedback, or a painting that won't straighten? Get in touch.</p>
+    <a class="button" href="mailto:sascha@corti.com?subject=PictureFramer%20Support">Contact Sascha Corti</a>
+  </section>
+</main>
+
+<footer>
+  <p>© 2026 Sascha Corti · <a href="mailto:sascha@corti.com">sascha@corti.com</a> · <a href="privacy.html">Privacy Policy</a></p>
+</footer>
+
+</body>
+</html>
