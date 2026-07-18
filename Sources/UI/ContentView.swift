@@ -16,7 +16,7 @@ struct ContentView: View {
                 case .adjusting, .exporting:
                     EditorView(model: model)
                 case .reflection:
-                    Text("Reflection editor")
+                    ReflectionEditView(model: model)
                 case .exported:
                     exportedScreen
                 }
