@@ -69,3 +69,8 @@ Pipeline (`Sources/Core/Pipeline/FramingPipeline.swift`): detect → margin → 
 - The photo picker needs no permission string (out-of-process); export needs `NSPhotoLibraryAddUsageDescription` (set in `project.yml`).
 - In the XCUITest, picker grid cells are `images` with identifier `PXGGridLayout-Info`, newest first; a first-run onboarding banner may cover the grid (close it), and cells may stay non-hittable while thumbnails load (coordinate-tap them).
 - iOS 26 photo-permission behavior (affects the denial-path UI test): with the permission not-determined, add-only saves are **auto-granted with no prompt**; after `simctl privacy … revoke photos-add`, the first save re-prompts with a card-style dialog that is NOT reachable via springboard accessibility queries (coordinate-tap its Don't Allow), and iOS may kill the app on the in-flight TCC change. `testRevokedPermissionShowsErrorAndSettingsLink` therefore denies in phase 1, relaunches in phase 2, and **skips unless you first run** `xcrun simctl privacy booted revoke photos-add com.corti.PictureFramer`.
+
+## Process notes
+
+- Feature work: spec in `docs/superpowers/specs/`, plan in `docs/superpowers/plans/`, then implement on a `feature/*` branch; PRs to `main` on github.com/TechPreacher/PictureFramer (switch gh account to `TechPreacher` for PR operations).
+- `.superpowers/` is local scratch (gitignored) — session ledgers and reports live there.
