@@ -57,6 +57,9 @@ final class EditorViewModel {
     /// AI result awaiting user accept/reject in the compare view.
     private(set) var pendingCleaned: CGImage?
     private(set) var isRemovingReflections = false
+    /// Bumped whenever reflection state is torn down; in-flight async
+    /// reflection work checks it before writing results back.
+    private var reflectionGeneration = 0
 
     let settings: ProviderSettingsStore
     private let reflectionDetector: ReflectionMaskDetector
@@ -260,6 +263,7 @@ final class EditorViewModel {
         let pan = panOffset
         let pipeline = pipeline
         let detector = reflectionDetector
+        let generation = reflectionGeneration
         let rendered = await Task.detached(priority: .userInitiated) {
             () -> (CGImage, CGImage?)? in
             guard let corrected = pipeline.finalImage(
@@ -268,6 +272,7 @@ final class EditorViewModel {
             ) else { return nil }
             return (corrected, detector.detectMask(in: corrected))
         }.value
+        guard generation == reflectionGeneration else { return }
         guard let (corrected, proposal) = rendered else {
             errorMessage = "Rendering failed — try adjusting the corners."
             return
@@ -305,22 +310,30 @@ final class EditorViewModel {
         errorMessage = nil
         isRemovingReflections = true
         defer { isRemovingReflections = false }
+        let generation = reflectionGeneration
         do {
-            pendingCleaned = try await remover.remove(
+            let cleaned = try await remover.remove(
                 from: correctedFullRes,
                 mask: mask,
                 provider: inpainterFactory(provider),
                 apiKey: apiKey
             )
+            guard generation == reflectionGeneration else { return }
+            pendingCleaned = cleaned
         } catch InpaintingError.invalidKey {
+            guard generation == reflectionGeneration else { return }
             errorMessage = "The API key was rejected — check it in Settings."
         } catch InpaintingError.rateLimited {
+            guard generation == reflectionGeneration else { return }
             errorMessage = "The provider is rate-limiting — try again shortly."
         } catch InpaintingError.emptyMask {
+            guard generation == reflectionGeneration else { return }
             errorMessage = "Mark at least one reflection to remove."
         } catch let InpaintingError.server(message) {
+            guard generation == reflectionGeneration else { return }
             errorMessage = "Provider error: \(message)"
         } catch {
+            guard generation == reflectionGeneration else { return }
             errorMessage = "Reflection removal failed. Check your connection and try again."
         }
     }
@@ -338,6 +351,7 @@ final class EditorViewModel {
     }
 
     func exitReflectionRemoval() {
+        reflectionGeneration += 1
         correctedFullRes = nil
         reflectionMask = nil
         pendingCleaned = nil
@@ -347,6 +361,7 @@ final class EditorViewModel {
 
     /// Any change to the crop makes an accepted AI result stale.
     private func invalidateCleaned() {
+        reflectionGeneration += 1
         cleanedImage = nil
         correctedFullRes = nil
         reflectionMask = nil

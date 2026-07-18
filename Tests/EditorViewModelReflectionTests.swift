@@ -107,6 +107,50 @@ import Testing
         #expect(model.correctedFullRes == nil)
         #expect(model.reflectionMask == nil)
         #expect(model.cleanedImage == nil)
+        #expect(model.pendingCleaned == nil)
+        #expect(model.isRemovingReflections == false)
         #expect(model.stage == .picking)
+    }
+
+    /// Provider that blocks until the test releases it.
+    private final class GatedProvider: InpaintingProvider, @unchecked Sendable {
+        let gate = AsyncStream<Void>.makeStream()
+        func uploadSize(for cropSize: CGSize) -> CGSize { cropSize }
+        func inpaint(image: CGImage, mask: CGImage, apiKey: String) async throws -> CGImage {
+            var iterator = gate.stream.makeAsyncIterator()
+            _ = await iterator.next()
+            return FixtureImageFactory.solidImage(
+                size: CGSize(width: image.width, height: image.height), gray: 1.0)
+        }
+    }
+
+    @Test func exitDuringRemovalDropsLateResult() async {
+        let provider = GatedProvider()
+        let defaults = UserDefaults(suiteName: "EditorVMReflection-\(UUID().uuidString)")!
+        let settings = ProviderSettingsStore(defaults: defaults, secrets: InMemorySecretStore())
+        settings.selectedProvider = .openAI
+        settings.setAPIKey("sk-test", for: .openAI)
+        let model = EditorViewModel(
+            settings: settings,
+            inpainterFactory: { _ in provider }
+        )
+        let size = CGSize(width: 800, height: 600)
+        let quad = FixtureImageFactory.axisAlignedQuad(in: size, inset: 100)
+        model.setSourceForTesting(
+            FixtureImageFactory.image(size: size, quad: quad), quad: quad)
+
+        await model.beginReflectionRemoval()
+        model.addMaskStroke(.init(mode: .add, radius: 40, points: [CGPoint(x: 300, y: 200)]))
+        let removal = Task { await model.runReflectionRemoval() }
+        // Let the removal task reach the gate.
+        for _ in 0..<5 {
+            await Task.yield()
+        }
+        model.exitReflectionRemoval()
+        provider.gate.continuation.yield()      // release the provider
+        provider.gate.continuation.finish()
+        await removal.value
+        #expect(model.pendingCleaned == nil)    // late result dropped
+        #expect(model.stage == .adjusting)
     }
 }
