@@ -15,11 +15,13 @@ import Testing
     }
 
     @Test func boundingBoxCoversWhitePixels() throws {
-        let mask = blobMask(white: CGRect(x: 80, y: 60, width: 40, height: 40))
+        let mask = blobMask(white: CGRect(x: 80, y: 100, width: 40, height: 40))
         let box = try #require(PatchCompositor.maskBoundingBox(of: mask))
-        #expect(box.contains(CGPoint(x: 100, y: 80)))
+        #expect(box.contains(CGPoint(x: 100, y: 120)))
+        // Off-center in y: a flipped bounding box would land in the lower half.
+        #expect(box.midY > 80)
         #expect(box.minX > 40 && box.maxX < 160)
-        #expect(box.minY > 20 && box.maxY < 140)
+        #expect(box.minY > 60 && box.maxY < 160)
     }
 
     @Test func blackMaskHasNoBoundingBox() {
@@ -69,5 +71,7 @@ import Testing
                 }
             }
         }
+        // Interior must stay meaningful — a degenerate all-black mask must fail.
+        #expect(soft.grayValue(atCanonical: CGPoint(x: 100, y: 80)) > 0.8)
     }
 }
