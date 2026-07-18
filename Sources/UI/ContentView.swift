@@ -35,7 +35,7 @@ struct ContentView: View {
                     .accessibilityLabel("Settings")
                 }
             }
-            .sheet(isPresented: $showSettings) {
+            .sheet(isPresented: $showSettings, onDismiss: { model.refreshProviderConfiguration() }) {
                 SettingsView(settings: model.settings)
             }
         }

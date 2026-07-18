@@ -37,12 +37,15 @@ import Testing
     }
 
     @Test func saturatedBrightColorIsNotGlare() {
-        // Pure saturated red at high luminance-ish brightness — not glare.
+        // Bright, highly saturated yellow — luminance ≈0.94 clears the
+        // brightness threshold, but saturation ≈0.8 is well above the 0.30
+        // cutoff, so the saturation branch rejects it (glare is
+        // near-white/desaturated, not vividly colored).
         let size = CGSize(width: 300, height: 200)
         let image = FixtureImageFactory.drawnImage(size: size) { context in
             context.setFillColor(CGColor(red: 0.3, green: 0.3, blue: 0.3, alpha: 1))
             context.fill(CGRect(origin: .zero, size: size))
-            context.setFillColor(CGColor(red: 1, green: 0.1, blue: 0.1, alpha: 1))
+            context.setFillColor(CGColor(red: 1, green: 1, blue: 0.2, alpha: 1))
             context.fillEllipse(in: CGRect(x: 100, y: 60, width: 100, height: 80))
         }
         #expect(detector.detectMask(in: image) == nil)

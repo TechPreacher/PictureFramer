@@ -61,6 +61,12 @@ final class EditorViewModel {
     /// reflection work checks it before writing results back.
     private var reflectionGeneration = 0
 
+    /// Mirrors `settings.isConfigured` as an observable property — the
+    /// settings store itself isn't `@Observable`, so views must go through
+    /// this and call `refreshProviderConfiguration()` after the settings
+    /// sheet dismisses.
+    private(set) var isProviderConfigured = false
+
     let settings: ProviderSettingsStore
     private let reflectionDetector: ReflectionMaskDetector
     private let remover: ReflectionRemover
@@ -92,6 +98,13 @@ final class EditorViewModel {
         self.reflectionDetector = detector
         self.remover = remover
         self.inpainterFactory = inpainterFactory
+        self.isProviderConfigured = settings.isConfigured
+    }
+
+    /// Call after the settings sheet dismisses so the AI-provider-dependent
+    /// UI (e.g. the "Remove Reflections" button) reflects the latest keys.
+    func refreshProviderConfiguration() {
+        isProviderConfigured = settings.isConfigured
     }
 
     var imagePixelSize: CGSize {
@@ -227,6 +240,23 @@ final class EditorViewModel {
     /// instead of one per tick.
     func regeneratePreview() {
         guard showCorrectedPreview else { return }
+        // An accepted AI result should preview as-is, not as a fresh
+        // (glare-y) re-render of the source through the pipeline.
+        if let cleanedImage {
+            previewTask?.cancel()
+            isRenderingPreview = true
+            previewTask = Task {
+                try? await Task.sleep(for: .milliseconds(80))
+                guard !Task.isCancelled else { return }
+                let rendered = await Task.detached(priority: .userInitiated) {
+                    downscaled(cleanedImage, maxDimension: 1600)
+                }.value
+                guard !Task.isCancelled else { return }
+                previewImage = rendered
+                isRenderingPreview = false
+            }
+            return
+        }
         guard let previewBase, let quad else { return }
         previewTask?.cancel()
         let margin = CGFloat(marginPixels)
@@ -259,11 +289,31 @@ final class EditorViewModel {
     func beginReflectionRemoval() async {
         guard let sourceImage, let quad else { return }
         errorMessage = nil
+        let generation = reflectionGeneration
+        let detector = reflectionDetector
+
+        // Crop params can't have drifted since the last accept — any crop
+        // change nils cleanedImage via invalidateCleaned. Reuse it as the
+        // working image instead of re-rendering (which would reintroduce
+        // the glare that was just painted out).
+        if let cleanedImage {
+            let proposal = await Task.detached(priority: .userInitiated) {
+                detector.detectMask(in: cleanedImage)
+            }.value
+            guard generation == reflectionGeneration else { return }
+            correctedFullRes = cleanedImage
+            reflectionMask = ReflectionMask(
+                imageSize: CGSize(width: cleanedImage.width, height: cleanedImage.height),
+                detectedRaster: proposal
+            )
+            pendingCleaned = nil
+            stage = .reflection
+            return
+        }
+
         let margin = CGFloat(marginPixels)
         let pan = panOffset
         let pipeline = pipeline
-        let detector = reflectionDetector
-        let generation = reflectionGeneration
         let rendered = await Task.detached(priority: .userInitiated) {
             () -> (CGImage, CGImage?)? in
             guard let corrected = pipeline.finalImage(
@@ -297,6 +347,7 @@ final class EditorViewModel {
     }
 
     func runReflectionRemoval() async {
+        guard !isRemovingReflections else { return }
         guard let correctedFullRes, let mask = reflectionMask else { return }
         guard let provider = settings.selectedProvider,
               let apiKey = settings.apiKey(for: provider), !apiKey.isEmpty else {
@@ -356,6 +407,7 @@ final class EditorViewModel {
         reflectionMask = nil
         pendingCleaned = nil
         errorMessage = nil
+        isRemovingReflections = false
         stage = .adjusting
     }
 
@@ -371,6 +423,9 @@ final class EditorViewModel {
     // MARK: Export
 
     func export() async {
+        // Kill any in-flight reflection-removal continuation so a late
+        // render can't yank stage back out of .exporting.
+        reflectionGeneration += 1
         guard let sourceImage, let quad else { return }
         stage = .exporting
         errorMessage = nil

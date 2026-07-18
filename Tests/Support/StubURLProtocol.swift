@@ -1,4 +1,9 @@
 import Foundation
+import Testing
+
+/// Enclosing namespace: all suites using the shared StubURLProtocol.handler
+/// nest here so .serialized applies across them, not just within each.
+@Suite(.serialized) enum NetworkStubSuites {}
 
 /// Intercepts URLSession requests in tests. Set `handler`, build a session
 /// with `StubURLProtocol.session()`, assert on captured requests.

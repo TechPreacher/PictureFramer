@@ -68,6 +68,31 @@ import Testing
         #expect(model.stage == .adjusting)
     }
 
+    @Test func secondRemovalRoundStartsFromCleanedImage() async {
+        let (model, _) = makeModel()
+        await model.beginReflectionRemoval()
+        model.addMaskStroke(.init(mode: .add, radius: 40,
+                                  points: [CGPoint(x: 300, y: 200)]))
+        await model.runReflectionRemoval()
+        model.acceptCleaned()
+        #expect(model.cleanedImage != nil)
+
+        // A second round should reuse the accepted image (with the mask
+        // area painted white by RecordingProvider) as the working base
+        // instead of re-rendering the glare-y source from scratch.
+        await model.beginReflectionRemoval()
+        #expect(model.stage == .reflection)
+        let corrected = model.correctedFullRes
+        #expect(corrected != nil)
+        guard let corrected else { return }
+        let sampler = PixelSampler(image: corrected)
+        // Sample points well inside the 40-radius stroke centered at
+        // (300, 200) — the region the first round painted white.
+        #expect(sampler.grayValue(atCanonical: CGPoint(x: 300, y: 200)) > 0.9)
+        #expect(sampler.grayValue(atCanonical: CGPoint(x: 310, y: 205)) > 0.9)
+        #expect(sampler.grayValue(atCanonical: CGPoint(x: 290, y: 195)) > 0.9)
+    }
+
     @Test func emptyMaskRemovalSetsError() async {
         let (model, _) = makeModel()
         await model.beginReflectionRemoval()

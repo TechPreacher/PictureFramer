@@ -141,8 +141,8 @@ struct EditorView: View {
                     )
                 }
                 .buttonStyle(.bordered)
-                .disabled(model.quad == nil || !model.settings.isConfigured)
-                if !model.settings.isConfigured {
+                .disabled(model.quad == nil || !model.isProviderConfigured)
+                if !model.isProviderConfigured {
                     Text("Set up an AI provider in Settings")
                         .font(.footnote)
                         .foregroundStyle(.secondary)

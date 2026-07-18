@@ -2,7 +2,9 @@ import Foundation
 import Testing
 @testable import PictureFramer
 
-@Suite(.serialized) struct ProviderKeyValidatorTests {
+extension NetworkStubSuites {
+
+@Suite struct ProviderKeyValidatorTests {
 
     private func validator() -> ProviderKeyValidator {
         ProviderKeyValidator(session: StubURLProtocol.session())
@@ -31,4 +33,6 @@ import Testing
         StubURLProtocol.handler = { _ in (401, Data()) }
         #expect(!(await validator().validate(provider: .openAI, apiKey: "sk-bad")))
     }
+}
+
 }

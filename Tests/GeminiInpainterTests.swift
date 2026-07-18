@@ -3,7 +3,9 @@ import Foundation
 import Testing
 @testable import PictureFramer
 
-@Suite(.serialized) struct GeminiInpainterTests {
+extension NetworkStubSuites {
+
+@Suite struct GeminiInpainterTests {
 
     private let image = FixtureImageFactory.solidImage(size: CGSize(width: 64, height: 64), gray: 0.4)
     private let mask = ReflectionMask.grayImage(
@@ -65,4 +67,6 @@ import Testing
         #expect(AIProvider.openAI.makeInpainter() is OpenAIInpainter)
         #expect(AIProvider.gemini.makeInpainter() is GeminiInpainter)
     }
+}
+
 }

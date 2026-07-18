@@ -38,7 +38,7 @@ struct GeminiInpainter: InpaintingProvider {
                                      "data": maskPNG.base64EncodedString()]],
                 ],
             ]],
-            "generationConfig": ["responseModalities": ["IMAGE"]],
+            "generationConfig": ["responseModalities": ["TEXT", "IMAGE"]],
         ]
         var request = URLRequest(url: URL(string:
             "https://generativelanguage.googleapis.com/v1beta/models/\(model):generateContent")!)

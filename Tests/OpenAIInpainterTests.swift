@@ -3,7 +3,9 @@ import Foundation
 import Testing
 @testable import PictureFramer
 
-@Suite(.serialized) struct OpenAIInpainterTests {
+extension NetworkStubSuites {
+
+@Suite struct OpenAIInpainterTests {
 
     private let image = FixtureImageFactory.solidImage(size: CGSize(width: 64, height: 64), gray: 0.4)
     private let mask = ReflectionMask.grayImage(
@@ -95,4 +97,6 @@ import Testing
         #expect(blackHalfAlpha == 255)
         #expect(whiteHalfAlpha == 0)
     }
+}
+
 }
