@@ -35,6 +35,7 @@ import Testing
             #expect(body.contains("name=\"image[]\""))
             #expect(body.contains("name=\"mask\""))
             #expect(body.contains("name=\"prompt\""))
+            #expect(body.contains("name=\"size\""))
             let json = #"{"data":[{"b64_json":"\#(b64)"}]}"#
             return (200, Data(json.utf8))
         }
@@ -70,5 +71,28 @@ import Testing
         await #expect(throws: InpaintingError.server("boom")) {
             _ = try await inpainter().inpaint(image: image, mask: mask, apiKey: "sk-test")
         }
+    }
+
+    @Test func maskConversionMakesWhiteTransparentAndBlackOpaque() throws {
+        // Left half black (keep), right half white (repaint).
+        var bytes = [UInt8](repeating: 0, count: 32 * 32)
+        for y in 0..<32 { for x in 16..<32 { bytes[y * 32 + x] = 255 } }
+        let mask = try #require(ReflectionMask.grayImage(from: bytes, width: 32, height: 32))
+        let png = try #require(OpenAIInpainter.transparentWhereWhitePNG(from: mask))
+        let decoded = try #require(cgImage(fromEncoded: png))
+        #expect(decoded.width == 32 && decoded.height == 32)
+        var rgba = [UInt8](repeating: 0, count: 32 * 32 * 4)
+        let context = try #require(CGContext(
+            data: &rgba, width: 32, height: 32,
+            bitsPerComponent: 8, bytesPerRow: 32 * 4,
+            space: CGColorSpaceCreateDeviceRGB(),
+            bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue))
+        context.clear(CGRect(x: 0, y: 0, width: 32, height: 32))
+        context.draw(decoded, in: CGRect(x: 0, y: 0, width: 32, height: 32))
+        // Row-major memory: sample one pixel per half at row 16.
+        let blackHalfAlpha = rgba[(16 * 32 + 8) * 4 + 3]    // was black → opaque
+        let whiteHalfAlpha = rgba[(16 * 32 + 24) * 4 + 3]   // was white → transparent
+        #expect(blackHalfAlpha == 255)
+        #expect(whiteHalfAlpha == 0)
     }
 }
