@@ -50,6 +50,7 @@ Pipeline (`Sources/Core/Pipeline/FramingPipeline.swift`): detect → margin → 
 - **Correction** (`Core/Rendering/PerspectiveCorrector.swift`): `CIPerspectiveCorrection` through the one shared `CIContext` (`RenderContext.shared`).
 - **Preview vs export**: `previewImage` corrects a downscaled copy for interactive speed; `finalImage` applies the transform to the original full-res pixels. Both must agree on aspect ratio (tested).
 - **Export** (`Core/Export/PhotoLibraryExporter.swift`): JPEG encode + `.addOnly` authorization behind the `PhotoLibraryWriting` protocol seam; only the thin `PHPhotoLibraryWriter` touches the real library.
+- **Reflection removal** (optional, after correction): `Core/Reflection/ReflectionMaskDetector.swift` proposes a glare mask (bright + unsaturated heuristic, no ML); `Core/Reflection/ReflectionMask.swift` holds proposal + brush strokes and rasterizes at any scale; `Core/Inpainting/ReflectionRemover.swift` crops the mask's padded bbox, sends it to an `InpaintingProvider` (OpenAI `gpt-image-1` via true mask edit, or Gemini 2.5 Flash Image via prompt+mask image), and `PatchCompositor` blends the returned patch back **only inside the mask** — pixels outside the mask are bit-identical (pure CoreGraphics clip-mask compositing; this is the tested fidelity invariant). Provider + API keys configured in `SettingsView`; keys live in the Keychain (`Core/Config/KeychainStore.swift`), never UserDefaults. All provider tests use `Tests/Support/StubURLProtocol.swift` — no live network.
 
 `Sources/Core/` is UI-free (no SwiftUI/UIKit imports) — everything there is unit-tested. `Sources/UI/` is a thin shell: `EditorViewModel` (`@Observable @MainActor`) holds the quad + margin and calls tested pipeline methods; views map coordinates exclusively via `DisplayMapper`.
 
@@ -69,6 +70,8 @@ Pipeline (`Sources/Core/Pipeline/FramingPipeline.swift`): detect → margin → 
 - The photo picker needs no permission string (out-of-process); export needs `NSPhotoLibraryAddUsageDescription` (set in `project.yml`).
 - In the XCUITest, picker grid cells are `images` with identifier `PXGGridLayout-Info`, newest first; a first-run onboarding banner may cover the grid (close it), and cells may stay non-hittable while thumbnails load (coordinate-tap them).
 - iOS 26 photo-permission behavior (affects the denial-path UI test): with the permission not-determined, add-only saves are **auto-granted with no prompt**; after `simctl privacy … revoke photos-add`, the first save re-prompts with a card-style dialog that is NOT reachable via springboard accessibility queries (coordinate-tap its Don't Allow), and iOS may kill the app on the in-flight TCC change. `testRevokedPermissionShowsErrorAndSettingsLink` therefore denies in phase 1, relaunches in phase 2, and **skips unless you first run** `xcrun simctl privacy booted revoke photos-add com.corti.PictureFramer`.
+- `CGImage.cropping(to:)` takes a TOP-LEFT-origin rect — always crop through `croppedCanonical` (`Core/Inpainting/ImageCoding.swift`), never call `cropping` directly with canonical coords.
+- OpenAI's images/edits mask marks repaint regions with TRANSPARENT pixels; app masks are white-=repaint grayscale. `OpenAIInpainter.transparentWhereWhitePNG` converts.
 
 ## Process notes
 
