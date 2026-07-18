@@ -10,6 +10,7 @@ final class EditorViewModel {
         case loading
         case detecting
         case adjusting
+        case reflection
         case exporting
         case exported
     }
@@ -28,7 +29,7 @@ final class EditorViewModel {
     /// Single source of truth for the crop, in canonical full-res pixels.
     var quad: Quad?
     var marginPixels: Double = 40 {
-        didSet { regeneratePreview() }
+        didSet { invalidateCleaned(); regeneratePreview() }
     }
     /// Crop-window shift in canonical source pixels — lets the user
     /// recenter when a shadow skewed the detected bounds off the painting.
@@ -45,6 +46,23 @@ final class EditorViewModel {
     }
     var errorMessage: String?
 
+    // MARK: Reflection removal state
+
+    /// Full-res corrected render the reflection mask refers to. Canonical
+    /// space for the mask = this image's pixels, lower-left origin.
+    private(set) var correctedFullRes: CGImage?
+    var reflectionMask: ReflectionMask?
+    /// Accepted AI result — exported verbatim instead of re-rendering.
+    private(set) var cleanedImage: CGImage?
+    /// AI result awaiting user accept/reject in the compare view.
+    private(set) var pendingCleaned: CGImage?
+    private(set) var isRemovingReflections = false
+
+    let settings: ProviderSettingsStore
+    private let reflectionDetector: ReflectionMaskDetector
+    private let remover: ReflectionRemover
+    private let inpainterFactory: @Sendable (AIProvider) -> any InpaintingProvider
+
     private let pipeline: FramingPipeline
     private let exporter: PhotoLibraryExporter
     private var loadTask: Task<Void, Never>?
@@ -55,9 +73,22 @@ final class EditorViewModel {
     private var previewBase: CGImage?
     private var previewScale: CGFloat = 1
 
-    init(pipeline: FramingPipeline = FramingPipeline(), exporter: PhotoLibraryExporter = PhotoLibraryExporter()) {
+    init(
+        pipeline: FramingPipeline = FramingPipeline(),
+        exporter: PhotoLibraryExporter = PhotoLibraryExporter(),
+        settings: ProviderSettingsStore = ProviderSettingsStore(),
+        detector: ReflectionMaskDetector = ReflectionMaskDetector(),
+        remover: ReflectionRemover = ReflectionRemover(),
+        inpainterFactory: @escaping @Sendable (AIProvider) -> any InpaintingProvider = {
+            $0.makeInpainter()
+        }
+    ) {
         self.pipeline = pipeline
         self.exporter = exporter
+        self.settings = settings
+        self.reflectionDetector = detector
+        self.remover = remover
+        self.inpainterFactory = inpainterFactory
     }
 
     var imagePixelSize: CGSize {
@@ -117,6 +148,7 @@ final class EditorViewModel {
     func runDetection() async {
         guard let sourceImage else { return }
         stage = .detecting
+        invalidateCleaned()
         detectionFailed = false
         panOffset = .zero
         do {
@@ -156,6 +188,7 @@ final class EditorViewModel {
     /// display y-axis points down while canonical y points up.
     func pan(byDisplayDelta delta: CGSize, previewFittedWidth: CGFloat) {
         guard let previewImage, previewScale > 0, previewFittedWidth > 0 else { return }
+        invalidateCleaned()
         let displayToSource = CGFloat(previewImage.width) / previewFittedWidth / previewScale
         panOffset.dx -= delta.width * displayToSource
         panOffset.dy += delta.height * displayToSource
@@ -164,6 +197,7 @@ final class EditorViewModel {
 
     func resetPan() {
         guard isPanned else { return }
+        invalidateCleaned()
         panOffset = .zero
         regeneratePreview()
     }
@@ -172,6 +206,7 @@ final class EditorViewModel {
 
     func moveCorner(_ corner: Quad.Corner, toDisplayPoint point: CGPoint, mapper: DisplayMapper) {
         guard var quad else { return }
+        invalidateCleaned()
         let pixel = mapper.pixelPoint(fromDisplay: point)
         let bounds = CGRect(origin: .zero, size: imagePixelSize)
         quad[corner] = CGPoint(
@@ -214,6 +249,110 @@ final class EditorViewModel {
         }
     }
 
+    // MARK: Reflection removal
+
+    /// Renders the full-res corrected image, proposes a glare mask, and
+    /// enters the reflection stage.
+    func beginReflectionRemoval() async {
+        guard let sourceImage, let quad else { return }
+        errorMessage = nil
+        let margin = CGFloat(marginPixels)
+        let pan = panOffset
+        let pipeline = pipeline
+        let detector = reflectionDetector
+        let rendered = await Task.detached(priority: .userInitiated) {
+            () -> (CGImage, CGImage?)? in
+            guard let corrected = pipeline.finalImage(
+                fullResImage: sourceImage, quad: quad,
+                marginPixels: margin, panOffset: pan
+            ) else { return nil }
+            return (corrected, detector.detectMask(in: corrected))
+        }.value
+        guard let (corrected, proposal) = rendered else {
+            errorMessage = "Rendering failed — try adjusting the corners."
+            return
+        }
+        correctedFullRes = corrected
+        reflectionMask = ReflectionMask(
+            imageSize: CGSize(width: corrected.width, height: corrected.height),
+            detectedRaster: proposal
+        )
+        pendingCleaned = nil
+        stage = .reflection
+    }
+
+    func redetectReflections() {
+        guard let correctedFullRes, var mask = reflectionMask else { return }
+        mask.detectedRaster = reflectionDetector.detectMask(in: correctedFullRes)
+        reflectionMask = mask
+    }
+
+    func addMaskStroke(_ stroke: ReflectionMask.Stroke) {
+        reflectionMask?.add(stroke)
+    }
+
+    func runReflectionRemoval() async {
+        guard let correctedFullRes, let mask = reflectionMask else { return }
+        guard let provider = settings.selectedProvider,
+              let apiKey = settings.apiKey(for: provider), !apiKey.isEmpty else {
+            errorMessage = "Set up an AI provider in Settings first."
+            return
+        }
+        guard !mask.isEmpty else {
+            errorMessage = "Mark at least one reflection to remove."
+            return
+        }
+        errorMessage = nil
+        isRemovingReflections = true
+        defer { isRemovingReflections = false }
+        do {
+            pendingCleaned = try await remover.remove(
+                from: correctedFullRes,
+                mask: mask,
+                provider: inpainterFactory(provider),
+                apiKey: apiKey
+            )
+        } catch InpaintingError.invalidKey {
+            errorMessage = "The API key was rejected — check it in Settings."
+        } catch InpaintingError.rateLimited {
+            errorMessage = "The provider is rate-limiting — try again shortly."
+        } catch InpaintingError.emptyMask {
+            errorMessage = "Mark at least one reflection to remove."
+        } catch let InpaintingError.server(message) {
+            errorMessage = "Provider error: \(message)"
+        } catch {
+            errorMessage = "Reflection removal failed. Check your connection and try again."
+        }
+    }
+
+    func acceptCleaned() {
+        guard let pendingCleaned else { return }
+        cleanedImage = pendingCleaned
+        self.pendingCleaned = nil
+        stage = .adjusting
+        showCorrectedPreview = true
+    }
+
+    func discardPendingCleaned() {
+        pendingCleaned = nil
+    }
+
+    func exitReflectionRemoval() {
+        correctedFullRes = nil
+        reflectionMask = nil
+        pendingCleaned = nil
+        errorMessage = nil
+        stage = .adjusting
+    }
+
+    /// Any change to the crop makes an accepted AI result stale.
+    private func invalidateCleaned() {
+        cleanedImage = nil
+        correctedFullRes = nil
+        reflectionMask = nil
+        pendingCleaned = nil
+    }
+
     // MARK: Export
 
     func export() async {
@@ -221,17 +360,22 @@ final class EditorViewModel {
         stage = .exporting
         errorMessage = nil
         exportDenied = false
-        let margin = CGFloat(marginPixels)
-        let pan = panOffset
-        let pipeline = pipeline
-        let rendered = await Task.detached(priority: .userInitiated) {
-            pipeline.finalImage(
-                fullResImage: sourceImage,
-                quad: quad,
-                marginPixels: margin,
-                panOffset: pan
-            )
-        }.value
+        let rendered: CGImage?
+        if let cleanedImage {
+            rendered = cleanedImage
+        } else {
+            let margin = CGFloat(marginPixels)
+            let pan = panOffset
+            let pipeline = pipeline
+            rendered = await Task.detached(priority: .userInitiated) {
+                pipeline.finalImage(
+                    fullResImage: sourceImage,
+                    quad: quad,
+                    marginPixels: margin,
+                    panOffset: pan
+                )
+            }.value
+        }
         guard let rendered else {
             errorMessage = "Rendering failed — try adjusting the corners."
             stage = .adjusting
@@ -266,6 +410,16 @@ final class EditorViewModel {
         exportDenied = false
         showCorrectedPreview = false
         errorMessage = nil
+        invalidateCleaned()
         stage = .picking
+    }
+
+    // MARK: Test support
+
+    /// Injects a source image + quad without the photo picker. Test-only.
+    func setSourceForTesting(_ image: CGImage, quad: Quad) {
+        sourceImage = image
+        self.quad = quad
+        stage = .adjusting
     }
 }

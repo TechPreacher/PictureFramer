@@ -14,6 +14,8 @@ struct ContentView: View {
                     ProgressView(model.stage == .loading ? "Loading photo…" : "Finding picture…")
                 case .adjusting, .exporting:
                     EditorView(model: model)
+                case .reflection:
+                    Text("Reflection editor")
                 case .exported:
                     exportedScreen
                 }
