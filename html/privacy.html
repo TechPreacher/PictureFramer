@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Privacy Policy — PictureFramer</title>
-<meta name="description" content="PictureFramer privacy policy: everything happens on your iPhone. No data is collected, stored, or shared.">
+<meta name="description" content="PictureFramer privacy policy: straightening happens entirely on your iPhone and no data is collected. The optional AI reflection remover sends only the image region you mark to the provider you configure.">
 <link rel="canonical" href="https://pictureframer.corti.com/privacy.html">
 <link rel="icon" type="image/png" href="assets/favicon.png">
 <style>
@@ -68,21 +68,25 @@
 </header>
 
 <main>
-  <p class="summary"><strong>The short version:</strong> PictureFramer collects no data. Your photos never leave your iPhone. There are no accounts, no analytics, no ads, no tracking, and no network connections.</p>
+  <p class="summary"><strong>The short version:</strong> PictureFramer collects no data. Straightening happens entirely on your iPhone — no accounts, no analytics, no ads, no tracking. One optional feature, AI reflection removal, sends the image region <em>you mark</em> to the AI provider <em>you configure</em>, only when you tap Remove. Nothing is ever sent to us.</p>
 
   <h2>What the app does with your photos</h2>
-  <p>PictureFramer processes photos entirely on your device:</p>
+  <p>PictureFramer processes photos on your device:</p>
   <ul>
     <li><strong>Importing</strong> uses Apple's system photo picker. The app only ever receives the single photo you choose — it has no access to the rest of your photo library.</li>
-    <li><strong>Editing</strong> (detecting the frame, straightening, adding a margin) happens locally on your iPhone using Apple's built-in image frameworks.</li>
+    <li><strong>Editing</strong> (detecting the frame, straightening, adding a margin) happens locally on your iPhone using Apple's built-in image frameworks. No network is involved.</li>
+    <li><strong>Reflection removal (optional)</strong> uses a cloud AI model to repaint glare you mark by hand. When — and only when — you tap Remove, a cropped region of the straightened image around your mask is sent over an encrypted connection (HTTPS) directly to the provider you selected in Settings (OpenAI or Google), using an API key you supplied. That transfer is governed by the chosen provider's own privacy policy and your agreement with them; PictureFramer has no server of its own and never sees the data. If you never set up a provider, the app makes no network requests at all.</li>
     <li><strong>Saving</strong> uses an add-only permission: the app can add the finished image to your photo library but cannot read, modify, or delete anything else in it.</li>
   </ul>
 
+  <h2>API keys</h2>
+  <p>Your OpenAI or Google API key is stored in the iOS Keychain on your device and is transmitted only to that provider's official API endpoint to authenticate your requests. It is never sent anywhere else, never logged, and never stored outside the Keychain.</p>
+
   <h2>Data collection</h2>
-  <p>None. PictureFramer does not collect, store, transmit, or share any personal data or usage data. The app contains no analytics frameworks, no advertising SDKs, and no third-party code, and it makes no network requests.</p>
+  <p>None. PictureFramer itself does not collect, store, transmit, or share any personal data or usage data. The app contains no analytics frameworks, no advertising SDKs, and no third-party code. The only network requests it can make are the reflection-removal calls described above, initiated by you, to the provider you chose.</p>
 
   <h2>App Store privacy label</h2>
-  <p>PictureFramer's App Store listing declares "Data Not Collected" — the strictest label Apple offers.</p>
+  <p>PictureFramer's App Store listing declares that the developer collects no data. Image data used by the optional AI feature travels directly from your device to the provider you configured — never to us.</p>
 
   <h2>Children's privacy</h2>
   <p>Because the app collects no data from anyone, it collects no data from children.</p>
@@ -93,7 +97,7 @@
   <h2>Contact</h2>
   <p>Questions about privacy or the app? Contact Sascha Corti at <a href="mailto:sascha@corti.com">sascha@corti.com</a>.</p>
 
-  <p class="updated">Last updated: July 14, 2026</p>
+  <p class="updated">Last updated: July 18, 2026</p>
 </main>
 
 <footer>

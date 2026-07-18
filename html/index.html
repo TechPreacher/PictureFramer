@@ -94,6 +94,14 @@
   }
   .step h3 { margin: 1.1rem 0 .3rem; font-size: 1.15rem; }
   .step p { font-size: .95rem; color: var(--muted); }
+  .steps-3 { grid-template-columns: repeat(auto-fit, minmax(200px, 240px)); justify-content: center; }
+  #reflections img.reflection-hero {
+    display: block;
+    max-width: min(720px, 100%);
+    margin: 0 auto 3rem;
+    border-radius: 14px;
+    box-shadow: 0 12px 32px rgba(35,38,43,.2);
+  }
   .step .num {
     display: inline-block;
     background: var(--gold);
@@ -184,6 +192,33 @@
     </div>
   </section>
 
+  <section id="reflections">
+    <h2>Museum glass? Gone.</h2>
+    <p class="lead">Skylights, spotlights and exit signs love to reflect off protective glass. Mark the glare, and AI repaints the artwork underneath — touching <em>only</em> the pixels you marked.</p>
+    <img class="reflection-hero" src="assets/reflection-before-after.png" alt="Before and after: a cyan skylight reflection on a glazed painting disappears, revealing the artwork beneath" loading="lazy">
+    <div class="steps steps-3">
+      <div class="step">
+        <span class="num">1</span>
+        <img src="assets/reflection-mask.png" alt="Reflection editor showing the glare highlighted with a red mask overlay and brush controls" loading="lazy">
+        <h3>Mark the glare</h3>
+        <p>PictureFramer suggests a mask automatically. Fine-tune it with your finger — brush to add, erase to trim.</p>
+      </div>
+      <div class="step">
+        <span class="num">2</span>
+        <img src="assets/reflection-after.png" alt="The same painting with the reflection removed, shown in the before/after compare view" loading="lazy">
+        <h3>Let AI repaint it</h3>
+        <p>Your chosen AI model reconstructs the artwork under the glare. Hold to compare before and after, then accept or try again.</p>
+      </div>
+      <div class="step">
+        <span class="num">3</span>
+        <img src="assets/settings-ai.png" alt="Settings screen with AI provider picker and API key fields" loading="lazy">
+        <h3>Your key, your choice</h3>
+        <p>Bring your own OpenAI or Google Gemini API key. Stored in the iOS Keychain; used only when you tap Remove.</p>
+      </div>
+    </div>
+    <p class="lead" style="margin-top:2.5rem">Everything outside your mask is untouched — not “mostly unchanged”, but pixel-for-pixel identical to the original. The straightening pipeline never needs the internet; reflection removal is the one optional step that does.</p>
+  </section>
+
   <section id="features">
     <h2>Made for museum days</h2>
     <p class="lead">Everything you photograph from the side, delivered as if you had stood dead center.</p>
@@ -205,8 +240,12 @@
         <p>Unframed canvases straighten just as well — anything with a clean rectangular edge.</p>
       </div>
       <div class="feature">
+        <h3>AI reflection removal</h3>
+        <p>Glare on protective glass? Mark it and let AI rebuild the artwork beneath — only inside your mask, guaranteed.</p>
+      </div>
+      <div class="feature">
         <h3>Private by design</h3>
-        <p>Everything happens on your iPhone. No accounts, no uploads, no tracking.</p>
+        <p>Straightening happens entirely on your iPhone — no accounts, no tracking. The optional reflection remover sends only the marked region to the AI provider you pick, with your own key, only when you tap Remove.</p>
       </div>
       <div class="feature">
         <h3>Shadow-proof</h3>
