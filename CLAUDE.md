@@ -34,6 +34,27 @@ xcrun simctl launch booted com.corti.PictureFramer
 
 Xcode 26.6 requires the iOS 26.5 simulator platform (`xcodebuild -downloadPlatform iOS` if destinations come up empty).
 
+### TestFlight .ipa
+
+First bump `CFBundleShortVersionString`/`CFBundleVersion` in `project.yml` (App Store Connect rejects duplicate build numbers), commit, `xcodegen generate`. Then:
+
+```sh
+# 1. Archive UNSIGNED — do not use normal automatic signing (see why below)
+xcodebuild -project PictureFramer.xcodeproj -scheme PictureFramer \
+  -destination 'generic/platform=iOS' -archivePath /tmp/PictureFramer.xcarchive \
+  archive CODE_SIGNING_ALLOWED=NO
+
+# 2. Export re-signs via Apple cloud signing (needs network + Xcode's Apple ID session)
+xcodebuild -exportArchive -archivePath /tmp/PictureFramer.xcarchive \
+  -exportOptionsPlist ExportOptions.plist -exportPath /tmp/export -allowProvisioningUpdates
+# → /tmp/export/PictureFramer.ipa; copy to ~/Temp/PictureFramer-<version>-b<build>.ipa —
+#   the user uploads from there with Transporter (do not attempt the upload yourself).
+```
+
+`ExportOptions.plist` (not checked in — recreate as needed): keys `method=app-store-connect`, `teamID=M9Y77E7ZX5`, `signingStyle=automatic`, `uploadSymbols=true`.
+
+Why unsigned-then-export: the team has **no registered devices** (user's iPhone is MDM-locked, no Developer Mode), so a normal automatically-signed archive fails with "Your team has no devices" — archive signing wants a *development* profile, which requires a device. Forcing `CODE_SIGN_IDENTITY="Apple Distribution"` on an automatic-signing archive fails with "conflicting provisioning settings" instead. App Store *distribution* signing needs no devices, and the team's Apple Distribution certificate is **cloud-managed** — it does NOT appear in `security find-identity`, so don't conclude it's missing; `-exportArchive -allowProvisioningUpdates` finds and uses it. Direct-to-device installs are impossible on the user's phone (MDM) — TestFlight is the only route onto hardware.
+
 ## Architecture
 
 The load-bearing invariant: **canonical coordinate space = full-resolution source-image pixels, lower-left origin** — identical to Core Image space. Every `Quad` in the app stores corners in this space.
