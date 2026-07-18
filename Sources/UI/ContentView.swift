@@ -3,6 +3,7 @@ import SwiftUI
 
 struct ContentView: View {
     @State private var model = EditorViewModel()
+    @State private var showSettings = false
 
     var body: some View {
         NavigationStack {
@@ -23,6 +24,19 @@ struct ContentView: View {
             .navigationTitle("PictureFramer")
             .sensoryFeedback(.success, trigger: model.stage == .exported) { _, isExported in
                 isExported
+            }
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                        showSettings = true
+                    } label: {
+                        Image(systemName: "gearshape")
+                    }
+                    .accessibilityLabel("Settings")
+                }
+            }
+            .sheet(isPresented: $showSettings) {
+                SettingsView(settings: model.settings)
             }
         }
     }
