@@ -27,9 +27,6 @@ struct ReflectionEditView: View {
         .onChange(of: model.reflectionMask?.strokes.count ?? 0) { _, _ in
             regenerateOverlay()
         }
-        .onChange(of: model.reflectionMask?.detectedRaster == nil) { _, _ in
-            regenerateOverlay()
-        }
     }
 
     // MARK: Image + mask overlay
@@ -204,6 +201,7 @@ struct ReflectionEditView: View {
             }
             Button("Re-detect") {
                 model.redetectReflections()
+                regenerateOverlay()
             }
             .buttonStyle(.bordered)
             Spacer()
