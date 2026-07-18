@@ -30,3 +30,12 @@ enum InpaintingPrompt {
         region. Return only the edited image.
         """
 }
+
+extension AIProvider {
+    func makeInpainter(session: URLSession = .shared) -> any InpaintingProvider {
+        switch self {
+        case .openAI: OpenAIInpainter(session: session)
+        case .gemini: GeminiInpainter(session: session)
+        }
+    }
+}
