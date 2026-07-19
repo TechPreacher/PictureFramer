@@ -297,8 +297,9 @@ final class EditorViewModel {
         // working image instead of re-rendering (which would reintroduce
         // the glare that was just painted out).
         if let cleanedImage {
+            let border = CGFloat(marginPixels)
             let proposal = await Task.detached(priority: .userInitiated) {
-                detector.detectMask(in: cleanedImage)
+                detector.detectMask(in: cleanedImage, excludingBorder: border)
             }.value
             guard generation == reflectionGeneration else { return }
             correctedFullRes = cleanedImage
@@ -320,7 +321,8 @@ final class EditorViewModel {
                 fullResImage: sourceImage, quad: quad,
                 marginPixels: margin, panOffset: pan
             ) else { return nil }
-            return (corrected, detector.detectMask(in: corrected))
+            // The margin band is real wall — bright, and never glare to fix.
+            return (corrected, detector.detectMask(in: corrected, excludingBorder: margin))
         }.value
         guard generation == reflectionGeneration else { return }
         guard let (corrected, proposal) = rendered else {
@@ -338,7 +340,8 @@ final class EditorViewModel {
 
     func redetectReflections() {
         guard let correctedFullRes, var mask = reflectionMask else { return }
-        mask.detectedRaster = reflectionDetector.detectMask(in: correctedFullRes)
+        mask.detectedRaster = reflectionDetector.detectMask(
+            in: correctedFullRes, excludingBorder: CGFloat(marginPixels))
         reflectionMask = mask
     }
 
