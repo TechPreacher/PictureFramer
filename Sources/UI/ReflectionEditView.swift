@@ -13,6 +13,16 @@ struct ReflectionEditView: View {
     @State private var currentStrokePoints: [CGPoint] = []   // canonical
     @State private var maskOverlay: CGImage?
     @State private var showPending = true
+    /// The just-committed stroke, kept on screen until the re-rasterized
+    /// overlay lands — otherwise the paint blinks off for a beat between
+    /// finger-up and the async raster update.
+    @State private var committedStroke: LiveStroke?
+
+    private struct LiveStroke {
+        var mode: ReflectionMask.Stroke.Mode
+        var canonicalRadius: CGFloat
+        var points: [CGPoint]   // canonical
+    }
     /// Current pinch-zoom factor of the editing canvas. Gesture locations
     /// arrive in the content's own (unzoomed) coordinate space, so only
     /// the brush RADIUS needs this — zoomed in, strokes get finer.
@@ -61,6 +71,21 @@ struct ReflectionEditView: View {
                                 .frame(width: proxy.size.width, height: proxy.size.height)
                                 .allowsHitTesting(false)
                         }
+                        // Live feedback: the in-flight stroke, plus the
+                        // last committed one until the raster catches up.
+                        if let committedStroke {
+                            strokePath(committedStroke, mapper: mapper)
+                        }
+                        if !currentStrokePoints.isEmpty {
+                            strokePath(
+                                LiveStroke(
+                                    mode: brushMode,
+                                    canonicalRadius: canonicalBrushRadius(mapper: mapper),
+                                    points: currentStrokePoints
+                                ),
+                                mapper: mapper
+                            )
+                        }
                     }
                     .contentShape(Rectangle())
                     .gesture(brushGesture(mapper: mapper))
@@ -86,6 +111,14 @@ struct ReflectionEditView: View {
             .padding(.top, 8)
     }
 
+    /// Display-point radius → canonical pixels; divided by the zoom so the
+    /// brush stays finger-sized ON SCREEN, i.e. finer in image pixels when
+    /// zoomed in.
+    private func canonicalBrushRadius(mapper: DisplayMapper) -> CGFloat {
+        let pixelsPerPoint = mapper.imagePixelSize.width / max(mapper.fittedRect.width, 1)
+        return brushRadiusPoints * pixelsPerPoint / max(zoomScale, 1)
+    }
+
     private func brushGesture(mapper: DisplayMapper) -> some Gesture {
         DragGesture(minimumDistance: 0)
             .onChanged { value in
@@ -93,17 +126,35 @@ struct ReflectionEditView: View {
             }
             .onEnded { _ in
                 guard !currentStrokePoints.isEmpty else { return }
-                // Convert display-point radius → canonical pixels; divide
-                // by the zoom so the brush stays finger-sized ON SCREEN,
-                // i.e. finer in image pixels when zoomed in.
-                let pixelsPerPoint = mapper.imagePixelSize.width / max(mapper.fittedRect.width, 1)
+                let radius = canonicalBrushRadius(mapper: mapper)
                 model.addMaskStroke(.init(
                     mode: brushMode,
-                    radius: brushRadiusPoints * pixelsPerPoint / max(zoomScale, 1),
+                    radius: radius,
                     points: currentStrokePoints
                 ))
+                committedStroke = LiveStroke(
+                    mode: brushMode, canonicalRadius: radius, points: currentStrokePoints)
                 currentStrokePoints = []
             }
+    }
+
+    /// Vector rendering of one stroke, matching how the raster will look:
+    /// add = the overlay's red tint; erase = a faint highlight so the user
+    /// sees where they are rubbing (true subtraction lands on finger-up).
+    private func strokePath(_ stroke: LiveStroke, mapper: DisplayMapper) -> some View {
+        let displayPoints = stroke.points.map { mapper.displayPoint(fromPixel: $0) }
+        let lineWidth = 2 * stroke.canonicalRadius
+            * mapper.fittedRect.width / max(mapper.imagePixelSize.width, 1)
+        let color: Color = stroke.mode == .add
+            ? Color(red: 1, green: 0, blue: 0).opacity(0.45)
+            : Color.white.opacity(0.4)
+        return Path { path in
+            guard let first = displayPoints.first else { return }
+            // A zero-length line with a round cap renders a dot.
+            path.addLines(displayPoints.count == 1 ? [first, first] : displayPoints)
+        }
+        .stroke(color, style: StrokeStyle(lineWidth: lineWidth, lineCap: .round, lineJoin: .round))
+        .allowsHitTesting(false)
     }
 
     /// Renders the mask as a red-tinted overlay image at preview scale.
@@ -116,7 +167,11 @@ struct ReflectionEditView: View {
         let scale = min(1, 1024 / CGFloat(max(corrected.width, corrected.height)))
         Task.detached(priority: .userInitiated) {
             let overlay = Self.tintedOverlay(mask: mask, scale: scale)
-            await MainActor.run { maskOverlay = overlay }
+            await MainActor.run {
+                maskOverlay = overlay
+                // Raster now includes the last stroke — retire the vector copy.
+                committedStroke = nil
+            }
         }
     }
 
