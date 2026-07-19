@@ -204,6 +204,12 @@ struct ReflectionEditView: View {
                 regenerateOverlay()
             }
             .buttonStyle(.bordered)
+            Button("Clear") {
+                model.clearReflectionMask()
+                regenerateOverlay()
+            }
+            .buttonStyle(.bordered)
+            .disabled(model.reflectionMask?.isEmpty ?? true)
             Spacer()
             Button {
                 Task { await model.runReflectionRemoval() }

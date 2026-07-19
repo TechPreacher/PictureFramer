@@ -346,6 +346,11 @@ final class EditorViewModel {
         reflectionMask?.add(stroke)
     }
 
+    /// Drops the detector proposal and every brush stroke in one go.
+    func clearReflectionMask() {
+        reflectionMask?.clear()
+    }
+
     func runReflectionRemoval() async {
         guard !isRemovingReflections else { return }
         guard let correctedFullRes, let mask = reflectionMask else { return }

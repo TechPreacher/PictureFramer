@@ -93,6 +93,18 @@ import Testing
         #expect(sampler.grayValue(atCanonical: CGPoint(x: 290, y: 195)) > 0.9)
     }
 
+    @Test func clearReflectionMaskEmptiesProposalAndStrokes() async {
+        let (model, _) = makeModel()
+        await model.beginReflectionRemoval()
+        model.addMaskStroke(.init(mode: .add, radius: 40,
+                                  points: [CGPoint(x: 300, y: 200)]))
+        #expect(model.reflectionMask?.isEmpty == false)
+        model.clearReflectionMask()
+        #expect(model.reflectionMask?.isEmpty == true)
+        #expect(model.reflectionMask?.detectedRaster == nil)
+        #expect(model.reflectionMask?.strokes.isEmpty == true)
+    }
+
     @Test func emptyMaskRemovalSetsError() async {
         let (model, _) = makeModel()
         await model.beginReflectionRemoval()
