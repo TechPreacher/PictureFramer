@@ -379,9 +379,13 @@ final class EditorViewModel {
         } catch InpaintingError.invalidKey {
             guard generation == reflectionGeneration else { return }
             errorMessage = "The API key was rejected — check it in Settings."
-        } catch InpaintingError.rateLimited {
+        } catch let InpaintingError.rateLimited(detail) {
             guard generation == reflectionGeneration else { return }
-            errorMessage = "The provider is rate-limiting — try again shortly."
+            if let detail {
+                errorMessage = "Rate-limited by the provider: \(detail)"
+            } else {
+                errorMessage = "The provider is rate-limiting — try again shortly."
+            }
         } catch InpaintingError.emptyMask {
             guard generation == reflectionGeneration else { return }
             errorMessage = "Mark at least one reflection to remove."

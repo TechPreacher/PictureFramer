@@ -80,8 +80,8 @@ private final class MockProvider: InpaintingProvider, @unchecked Sendable {
     @Test func providerErrorPropagates() async {
         let image = FixtureImageFactory.noiseImage(size: size, seed: 3)
         let provider = MockProvider()
-        provider.errorToThrow = .rateLimited
-        await #expect(throws: InpaintingError.rateLimited) {
+        provider.errorToThrow = .rateLimited(detail: nil)
+        await #expect(throws: InpaintingError.rateLimited(detail: nil)) {
             _ = try await remover.remove(
                 from: image, mask: maskWithBlob(at: CGPoint(x: 320, y: 240), radius: 60),
                 provider: provider, apiKey: "k")

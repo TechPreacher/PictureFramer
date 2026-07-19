@@ -4,7 +4,11 @@ import Foundation
 enum InpaintingError: Error, Equatable {
     case notConfigured
     case invalidKey
-    case rateLimited
+    /// HTTP 429. `detail` carries the provider's own explanation when the
+    /// body has one — for Gemini free-tier keys the image model 429s
+    /// permanently ("exceeded your current quota"), and without the detail
+    /// that's indistinguishable from a transient rate limit.
+    case rateLimited(detail: String?)
     case invalidResponse
     case server(String)
     case emptyMask

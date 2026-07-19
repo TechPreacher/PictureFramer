@@ -90,18 +90,21 @@ struct OpenAIInpainter: InpaintingProvider {
         guard let http = response as? HTTPURLResponse else {
             throw InpaintingError.invalidResponse
         }
+        // OpenAI and Gemini share this body shape for errors.
+        struct ErrorPayload: Decodable {
+            struct Inner: Decodable { let message: String }
+            let error: Inner
+        }
         switch http.statusCode {
         case 200...299:
             return
         case 401, 403:
             throw InpaintingError.invalidKey
         case 429:
-            throw InpaintingError.rateLimited
+            let detail = (try? JSONDecoder().decode(ErrorPayload.self, from: data))?
+                .error.message
+            throw InpaintingError.rateLimited(detail: detail)
         default:
-            struct ErrorPayload: Decodable {
-                struct Inner: Decodable { let message: String }
-                let error: Inner
-            }
             let message = (try? JSONDecoder().decode(ErrorPayload.self, from: data))?
                 .error.message ?? "HTTP \(http.statusCode)"
             throw InpaintingError.server(message)

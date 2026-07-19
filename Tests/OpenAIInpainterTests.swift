@@ -54,7 +54,18 @@ extension NetworkStubSuites {
 
     @Test func maps429ToRateLimited() async {
         StubURLProtocol.handler = { _ in (429, Data()) }
-        await #expect(throws: InpaintingError.rateLimited) {
+        await #expect(throws: InpaintingError.rateLimited(detail: nil)) {
+            _ = try await inpainter().inpaint(image: image, mask: mask, apiKey: "sk-test")
+        }
+    }
+
+    @Test func rateLimitDetailCarriesProviderMessage() async {
+        // Google free-tier keys 429 forever on the image model; the body's
+        // message is the only clue the user gets. It must survive mapping.
+        let body = #"{"error":{"message":"You exceeded your current quota, please check your plan and billing details.","status":"RESOURCE_EXHAUSTED"}}"#
+        StubURLProtocol.handler = { _ in (429, Data(body.utf8)) }
+        await #expect(throws: InpaintingError.rateLimited(
+            detail: "You exceeded your current quota, please check your plan and billing details.")) {
             _ = try await inpainter().inpaint(image: image, mask: mask, apiKey: "sk-test")
         }
     }
