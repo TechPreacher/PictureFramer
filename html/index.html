@@ -102,6 +102,29 @@
     border-radius: 14px;
     box-shadow: 0 12px 32px rgba(35,38,43,.2);
   }
+  /* AI setup */
+  .setup-box {
+    background: #fff;
+    border-radius: 18px;
+    padding: 2.5rem 2.5rem 2rem;
+    box-shadow: 0 6px 24px rgba(35,38,43,.08);
+    max-width: 760px;
+    margin: 0 auto;
+  }
+  .setup-box ol { padding-left: 1.3rem; }
+  .setup-box ol > li { margin-bottom: 1.1rem; }
+  .setup-box ul { padding-left: 1.2rem; margin-top: .4rem; }
+  .setup-box ul li { margin-bottom: .4rem; color: var(--muted); }
+  .setup-box a { color: var(--gold); }
+  .setup-note {
+    margin-top: 1.5rem;
+    padding: .9rem 1.2rem;
+    background: var(--paper);
+    border-left: 4px solid var(--gold);
+    border-radius: 8px;
+    font-size: .95rem;
+    color: var(--muted);
+  }
   .step .num {
     display: inline-block;
     background: var(--gold);
@@ -217,6 +240,24 @@
       </div>
     </div>
     <p class="lead" style="margin-top:2.5rem">Everything outside your mask is untouched — not “mostly unchanged”, but pixel-for-pixel identical to the original. The straightening pipeline never needs the internet; reflection removal is the one optional step that does.</p>
+  </section>
+
+  <section id="setup-ai">
+    <h2>Setting up AI — two minutes, once</h2>
+    <p class="lead">Reflection removal uses your own AI account, so there's no subscription and no middleman. Grab a key, paste it into the app, done.</p>
+    <div class="setup-box">
+      <ol>
+        <li><strong>Get an API key</strong> from either provider:
+          <ul>
+            <li><strong>OpenAI</strong> — create a key at <a href="https://platform.openai.com/api-keys" rel="noopener">platform.openai.com/api-keys</a>. Any funded account works.</li>
+            <li><strong>Google Gemini</strong> — create a key at <a href="https://aistudio.google.com/apikey" rel="noopener">aistudio.google.com/apikey</a>. <strong>Important:</strong> the image model needs a <em>paid</em> plan — free-tier keys look valid but every removal fails with a quota error. Enable billing on the key's project first.</li>
+          </ul>
+        </li>
+        <li><strong>Open Settings in the app</strong> (gear icon on the start screen), pick your provider, paste the key, and tap <em>Validate Key</em>.</li>
+        <li><strong>That's it.</strong> The key is stored in your iPhone's Keychain and used only when you tap Remove. A typical removal costs a few cents, billed by your provider.</li>
+      </ol>
+      <p class="setup-note">Seeing “Rate-limited by the provider … check your plan and billing details” with Gemini? That's the free-tier quota, not actual rate limiting — upgrade the plan or switch to OpenAI.</p>
+    </div>
   </section>
 
   <section id="features">

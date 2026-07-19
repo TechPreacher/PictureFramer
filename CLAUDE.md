@@ -93,6 +93,7 @@ Pipeline (`Sources/Core/Pipeline/FramingPipeline.swift`): detect → margin → 
 - iOS 26 photo-permission behavior (affects the denial-path UI test): with the permission not-determined, add-only saves are **auto-granted with no prompt**; after `simctl privacy … revoke photos-add`, the first save re-prompts with a card-style dialog that is NOT reachable via springboard accessibility queries (coordinate-tap its Don't Allow), and iOS may kill the app on the in-flight TCC change. `testRevokedPermissionShowsErrorAndSettingsLink` therefore denies in phase 1, relaunches in phase 2, and **skips unless you first run** `xcrun simctl privacy booted revoke photos-add com.corti.PictureFramer`.
 - `CGImage.cropping(to:)` takes a TOP-LEFT-origin rect — always crop through `croppedCanonical` (`Core/Inpainting/ImageCoding.swift`), never call `cropping` directly with canonical coords.
 - OpenAI's images/edits mask marks repaint regions with TRANSPARENT pixels; app masks are white-=repaint grayscale. `OpenAIInpainter.transparentWhereWhitePNG` converts.
+- Gemini **free-tier** keys pass the Settings key validation (listing models is free) but 429 permanently on the image model (`RESOURCE_EXHAUSTED`, free-tier quota is zero) — looks like transient rate limiting but never recovers; the fix is billing on the key's Google project, not retrying. `InpaintingError.rateLimited(detail:)` carries the provider's body message to the UI so this is diagnosable on-device.
 
 ## Process notes
 

@@ -13,6 +13,8 @@ Photograph a painting in a museum or at home — the photo is usually shot at an
 - **Live preview** on a downscaled copy for speed; export renders from the original full-resolution pixels.
 - **AI reflection removal** (optional): glass glare on museum pieces is auto-detected on-device and shown as a brush-editable mask; a cloud inpainting model (OpenAI `gpt-image-1` or Gemini 2.5 Flash Image, your own API key) reconstructs the artwork underneath. Only masked pixels can change — everything outside the mask stays bit-identical to the original, enforced client-side and covered by tests.
 - **Settings** page for choosing the AI provider and storing API keys — keys live in the iOS Keychain, never in UserDefaults, and images are only sent when you tap Remove.
+  - OpenAI: any API key with image access works.
+  - Google Gemini: the key's project must be on a **paid/billed tier** — the image model has no free-tier quota, so free AI Studio keys validate fine but every removal fails with a quota (HTTP 429) error. Enable billing in Google AI Studio / Cloud Console first.
 - Works with unframed canvases too — anything with a detectable rectangular outline.
 
 ## Requirements
