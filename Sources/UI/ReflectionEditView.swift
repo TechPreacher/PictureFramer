@@ -264,7 +264,7 @@ struct ReflectionEditView: View {
             Button("Cancel", role: .cancel) {
                 model.exitReflectionRemoval()
             }
-            Button("Re-detect") {
+            Button("Auto-detect") {
                 model.redetectReflections()
                 regenerateOverlay()
             }

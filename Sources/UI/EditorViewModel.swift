@@ -284,28 +284,24 @@ final class EditorViewModel {
 
     // MARK: Reflection removal
 
-    /// Renders the full-res corrected image, proposes a glare mask, and
-    /// enters the reflection stage.
+    /// Renders the full-res corrected image and enters the reflection
+    /// stage with an EMPTY mask — auto-detection is opt-in via the
+    /// Auto-detect button (`redetectReflections`).
     func beginReflectionRemoval() async {
         guard let sourceImage, let quad else { return }
         errorMessage = nil
         let generation = reflectionGeneration
-        let detector = reflectionDetector
 
         // Crop params can't have drifted since the last accept — any crop
         // change nils cleanedImage via invalidateCleaned. Reuse it as the
         // working image instead of re-rendering (which would reintroduce
         // the glare that was just painted out).
+        // Auto-detection is opt-in (Auto-detect button) — the mask starts
+        // empty so the user is never greeted by unwanted proposals.
         if let cleanedImage {
-            let border = CGFloat(marginPixels)
-            let proposal = await Task.detached(priority: .userInitiated) {
-                detector.detectMask(in: cleanedImage, excludingBorder: border)
-            }.value
-            guard generation == reflectionGeneration else { return }
             correctedFullRes = cleanedImage
             reflectionMask = ReflectionMask(
-                imageSize: CGSize(width: cleanedImage.width, height: cleanedImage.height),
-                detectedRaster: proposal
+                imageSize: CGSize(width: cleanedImage.width, height: cleanedImage.height)
             )
             pendingCleaned = nil
             stage = .reflection
@@ -315,24 +311,20 @@ final class EditorViewModel {
         let margin = CGFloat(marginPixels)
         let pan = panOffset
         let pipeline = pipeline
-        let rendered = await Task.detached(priority: .userInitiated) {
-            () -> (CGImage, CGImage?)? in
-            guard let corrected = pipeline.finalImage(
+        let corrected = await Task.detached(priority: .userInitiated) {
+            pipeline.finalImage(
                 fullResImage: sourceImage, quad: quad,
                 marginPixels: margin, panOffset: pan
-            ) else { return nil }
-            // The margin band is real wall — bright, and never glare to fix.
-            return (corrected, detector.detectMask(in: corrected, excludingBorder: margin))
+            )
         }.value
         guard generation == reflectionGeneration else { return }
-        guard let (corrected, proposal) = rendered else {
+        guard let corrected else {
             errorMessage = "Rendering failed — try adjusting the corners."
             return
         }
         correctedFullRes = corrected
         reflectionMask = ReflectionMask(
-            imageSize: CGSize(width: corrected.width, height: corrected.height),
-            detectedRaster: proposal
+            imageSize: CGSize(width: corrected.width, height: corrected.height)
         )
         pendingCleaned = nil
         stage = .reflection

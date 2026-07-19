@@ -43,6 +43,15 @@ import Testing
         #expect(model.reflectionMask != nil)   // present (possibly empty of strokes)
     }
 
+    /// Auto-detection is opt-in: entering the stage proposes nothing; the
+    /// Auto-detect button (redetectReflections) runs the detector on demand.
+    @Test func beginReflectionRemovalStartsWithEmptyMask() async {
+        let (model, _) = makeModel()
+        await model.beginReflectionRemoval()
+        #expect(model.reflectionMask?.detectedRaster == nil)
+        #expect(model.reflectionMask?.isEmpty == true)
+    }
+
     @Test func runReflectionRemovalProducesPendingResult() async {
         let provider = RecordingProvider()
         let (model, _) = makeModel(provider: provider)
