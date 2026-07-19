@@ -13,6 +13,10 @@ struct ReflectionEditView: View {
     @State private var currentStrokePoints: [CGPoint] = []   // canonical
     @State private var maskOverlay: CGImage?
     @State private var showPending = true
+    /// Current pinch-zoom factor of the editing canvas. Gesture locations
+    /// arrive in the content's own (unzoomed) coordinate space, so only
+    /// the brush RADIUS needs this — zoomed in, strokes get finer.
+    @State private var zoomScale: CGFloat = 1
 
     var body: some View {
         VStack(spacing: 12) {
@@ -46,18 +50,22 @@ struct ReflectionEditView: View {
                     imagePixelSize: CGSize(width: corrected.width, height: corrected.height),
                     viewSize: proxy.size
                 )
-                ZStack {
-                    fittedImage(corrected, in: proxy.size)
-                    if let maskOverlay {
-                        Image(decorative: maskOverlay, scale: 1)
-                            .resizable()
-                            .aspectRatio(contentMode: .fit)
-                            .frame(width: proxy.size.width, height: proxy.size.height)
-                            .allowsHitTesting(false)
+                // Pinch to zoom, two-finger pan; one finger brushes.
+                ZoomableContainer(zoomScale: $zoomScale) {
+                    ZStack {
+                        fittedImage(corrected, in: proxy.size)
+                        if let maskOverlay {
+                            Image(decorative: maskOverlay, scale: 1)
+                                .resizable()
+                                .aspectRatio(contentMode: .fit)
+                                .frame(width: proxy.size.width, height: proxy.size.height)
+                                .allowsHitTesting(false)
+                        }
                     }
+                    .contentShape(Rectangle())
+                    .gesture(brushGesture(mapper: mapper))
                 }
-                .contentShape(Rectangle())
-                .gesture(brushGesture(mapper: mapper))
+                .frame(width: proxy.size.width, height: proxy.size.height)
             }
         }
     }
@@ -85,11 +93,13 @@ struct ReflectionEditView: View {
             }
             .onEnded { _ in
                 guard !currentStrokePoints.isEmpty else { return }
-                // Convert display-point radius → canonical pixels.
+                // Convert display-point radius → canonical pixels; divide
+                // by the zoom so the brush stays finger-sized ON SCREEN,
+                // i.e. finer in image pixels when zoomed in.
                 let pixelsPerPoint = mapper.imagePixelSize.width / max(mapper.fittedRect.width, 1)
                 model.addMaskStroke(.init(
                     mode: brushMode,
-                    radius: brushRadiusPoints * pixelsPerPoint,
+                    radius: brushRadiusPoints * pixelsPerPoint / max(zoomScale, 1),
                     points: currentStrokePoints
                 ))
                 currentStrokePoints = []
