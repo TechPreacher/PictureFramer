@@ -113,4 +113,98 @@ struct RectangleDetectorTests {
         #expect(same.width == 300)
         #expect(same.height == 200)
     }
+
+    // MARK: Mode-aware selection (pure logic, no Vision)
+
+    private var nestedFixtureQuads: (outer: Quad, inner: Quad) {
+        let outer = FixtureImageFactory.axisAlignedQuad(in: size, inset: 150)
+        // Negative expansion shrinks — 120 px frame width on every side.
+        let inner = outer.expanded(by: -120)!
+        return (outer, inner)
+    }
+
+    @Test func nestedSelectionPicksInnerCandidate() {
+        let (outer, inner) = nestedFixtureQuads
+        let candidates = [
+            RectangleDetector.Candidate(quad: outer, confidence: 0.9),
+            RectangleDetector.Candidate(quad: inner, confidence: 0.8),
+        ]
+        #expect(RectangleDetector.nestedQuad(from: candidates, imageSize: size) == inner)
+    }
+
+    /// Vision often reports the same physical edge twice with tiny offsets.
+    /// A near-duplicate of the outer quad must not count as "nested".
+    @Test func nearDuplicateOfOuterIsNotNested() {
+        let (outer, _) = nestedFixtureQuads
+        let duplicate = outer.expanded(by: -5)!  // 5 px < 1.5% inset (18 px)
+        let candidates = [
+            RectangleDetector.Candidate(quad: outer, confidence: 0.9),
+            RectangleDetector.Candidate(quad: duplicate, confidence: 0.85),
+        ]
+        #expect(RectangleDetector.nestedQuad(from: candidates, imageSize: size) == nil)
+    }
+
+    /// Several nested rectangles (painting, then artwork detail inside it):
+    /// the largest nested one is the painting.
+    @Test func largestNestedCandidateWins() {
+        let (outer, inner) = nestedFixtureQuads
+        let detail = outer.expanded(by: -250)!
+        let candidates = [
+            RectangleDetector.Candidate(quad: outer, confidence: 0.9),
+            RectangleDetector.Candidate(quad: detail, confidence: 0.9),
+            RectangleDetector.Candidate(quad: inner, confidence: 0.7),
+        ]
+        #expect(RectangleDetector.nestedQuad(from: candidates, imageSize: size) == inner)
+    }
+
+    @Test func noCandidatesYieldsNoNestedQuad() {
+        #expect(RectangleDetector.nestedQuad(from: [], imageSize: size) == nil)
+    }
+
+    @Test func bestOuterPrefersConfidenceThenArea() {
+        let (outer, inner) = nestedFixtureQuads
+        let equalConfidence = [
+            RectangleDetector.Candidate(quad: inner, confidence: 0.9),
+            RectangleDetector.Candidate(quad: outer, confidence: 0.9),
+        ]
+        #expect(RectangleDetector.bestOuterQuad(from: equalConfidence) == outer)
+        let higherConfidenceInner = [
+            RectangleDetector.Candidate(quad: inner, confidence: 0.95),
+            RectangleDetector.Candidate(quad: outer, confidence: 0.9),
+        ]
+        #expect(RectangleDetector.bestOuterQuad(from: higherConfidenceInner) == inner)
+    }
+
+    // MARK: Painting-only mode (end-to-end Vision)
+
+    @Test func paintingModeDetectsInnerPainting() async throws {
+        let (outer, inner) = nestedFixtureQuads
+        let image = FixtureImageFactory.framedPaintingImage(
+            size: size, outerQuad: outer, innerQuad: inner)
+        let detected = try #require(
+            try await detector.detectQuad(
+                in: image, fullResolutionSize: size, mode: .paintingOnly))
+        expectMatches(detected, groundTruth: inner, imageSize: size, tolerance: 0.035)
+    }
+
+    @Test func framedModeStillDetectsOuterFrameOnNestedFixture() async throws {
+        let (outer, inner) = nestedFixtureQuads
+        let image = FixtureImageFactory.framedPaintingImage(
+            size: size, outerQuad: outer, innerQuad: inner)
+        let detected = try #require(
+            try await detector.detectQuad(
+                in: image, fullResolutionSize: size, mode: .framed))
+        expectMatches(detected, groundTruth: outer, imageSize: size, tolerance: 0.035)
+    }
+
+    /// A fixture with only one rectangle: painting mode has nothing nested
+    /// and must fall back to the outer quad, not fail.
+    @Test func paintingModeFallsBackToOuterQuadWhenNothingNested() async throws {
+        let quad = FixtureImageFactory.axisAlignedQuad(in: size, inset: 150)
+        let image = FixtureImageFactory.image(size: size, quad: quad)
+        let detected = try #require(
+            try await detector.detectQuad(
+                in: image, fullResolutionSize: size, mode: .paintingOnly))
+        expectMatches(detected, groundTruth: quad, imageSize: size, tolerance: 0.035)
+    }
 }

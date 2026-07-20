@@ -82,6 +82,34 @@ enum FixtureImageFactory {
         }
     }
 
+    /// A painting nested inside a frame: outer quad filled in frame gray,
+    /// inner quad filled in dark painting gray, on a light background.
+    /// Both edges are high-contrast so Vision can find both rectangles.
+    static func framedPaintingImage(
+        size: CGSize,
+        backgroundGray: CGFloat = 0.85,
+        outerQuad: Quad,
+        frameGray: CGFloat = 0.55,
+        innerQuad: Quad,
+        paintingGray: CGFloat = 0.12
+    ) -> CGImage {
+        drawnImage(size: size) { context in
+            context.setFillColor(gray: backgroundGray, alpha: 1)
+            context.fill(CGRect(origin: .zero, size: size))
+            fillQuad(outerQuad, gray: frameGray, in: context)
+            fillQuad(innerQuad, gray: paintingGray, in: context)
+        }
+    }
+
+    private static func fillQuad(_ quad: Quad, gray: CGFloat, in context: CGContext) {
+        let path = CGMutablePath()
+        path.addLines(between: quad.perimeterCorners)
+        path.closeSubpath()
+        context.setFillColor(gray: gray, alpha: 1)
+        context.addPath(path)
+        context.fillPath()
+    }
+
     // MARK: Ground-truth quads
 
     static func axisAlignedQuad(in size: CGSize, inset: CGFloat) -> Quad {
