@@ -20,3 +20,8 @@ xcuserdata/
 
 # Test artifacts
 *.xcresult
+
+# Session/tooling scratch
+.superpowers/
+*.log
+

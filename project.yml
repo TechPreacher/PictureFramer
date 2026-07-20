@@ -21,8 +21,8 @@ targets:
       properties:
         UILaunchScreen: {}
         CFBundleDisplayName: PictureFramer
-        CFBundleShortVersionString: "1.0.0"
-        CFBundleVersion: "1"
+        CFBundleShortVersionString: "1.1.0"
+        CFBundleVersion: "4"
         ITSAppUsesNonExemptEncryption: false
         NSPhotoLibraryAddUsageDescription: >-
           PictureFramer saves your straightened pictures to your photo library.

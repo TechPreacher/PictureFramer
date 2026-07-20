@@ -15,7 +15,7 @@ enum FixtureImageFactory {
         fillGray: CGFloat = 0.15,
         frameBorderWidth: CGFloat = 12
     ) -> CGImage {
-        drawImage(size: size) { context in
+        drawnImage(size: size) { context in
             context.setFillColor(gray: backgroundGray, alpha: 1)
             context.fill(CGRect(origin: .zero, size: size))
 
@@ -46,7 +46,7 @@ enum FixtureImageFactory {
             return CGFloat(state % 256) / 255
         }
         let cell: CGFloat = 8
-        return drawImage(size: size) { context in
+        return drawnImage(size: size) { context in
             var y: CGFloat = 0
             while y < size.height {
                 var x: CGFloat = 0
@@ -61,9 +61,24 @@ enum FixtureImageFactory {
     }
 
     static func solidImage(size: CGSize, gray: CGFloat = 0.5) -> CGImage {
-        drawImage(size: size) { context in
+        drawnImage(size: size) { context in
             context.setFillColor(gray: gray, alpha: 1)
             context.fill(CGRect(origin: .zero, size: size))
+        }
+    }
+
+    /// Dark "artwork" with a bright glare ellipse — detector fixture.
+    /// glareRect is in canonical coordinates.
+    static func glareImage(
+        size: CGSize,
+        artworkGray: CGFloat = 0.3,
+        glareRect: CGRect
+    ) -> CGImage {
+        drawnImage(size: size) { context in
+            context.setFillColor(gray: artworkGray, alpha: 1)
+            context.fill(CGRect(origin: .zero, size: size))
+            context.setFillColor(gray: 0.98, alpha: 1)
+            context.fillEllipse(in: glareRect)
         }
     }
 
@@ -109,7 +124,7 @@ enum FixtureImageFactory {
 
     // MARK: Drawing
 
-    private static func drawImage(size: CGSize, draw: (CGContext) -> Void) -> CGImage {
+    static func drawnImage(size: CGSize, draw: (CGContext) -> Void) -> CGImage {
         let context = CGContext(
             data: nil,
             width: Int(size.width),

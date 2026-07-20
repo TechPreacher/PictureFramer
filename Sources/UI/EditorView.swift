@@ -131,6 +131,25 @@ struct EditorView: View {
             MarginControlView(marginPixels: $model.marginPixels)
 
             HStack {
+                Button {
+                    Task { await model.beginReflectionRemoval() }
+                } label: {
+                    Label(
+                        model.cleanedImage != nil
+                            ? "Reflections Removed" : "Remove Reflections",
+                        systemImage: model.cleanedImage != nil ? "checkmark.seal" : "sparkles"
+                    )
+                }
+                .buttonStyle(.bordered)
+                .disabled(model.quad == nil || !model.isProviderConfigured)
+                if !model.isProviderConfigured {
+                    Text("Set up an AI provider in Settings")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                }
+            }
+
+            HStack {
                 Button("Start Over", role: .cancel) {
                     model.reset()
                 }
