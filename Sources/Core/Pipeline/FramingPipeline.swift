@@ -11,13 +11,13 @@ struct FramingPipeline: Sendable {
     /// Max dimension of the copy used for detection.
     var detectionMaxDimension: CGFloat = 1600
 
-    /// Detects the picture's outer quad. Runs Vision on a downscaled copy;
+    /// Detects the crop quad for `mode`. Runs Vision on a downscaled copy;
     /// the returned quad is in full-resolution canonical pixels.
-    func detectQuad(in fullResImage: CGImage) async throws -> Quad? {
+    func detectQuad(in fullResImage: CGImage, mode: CropMode = .framed) async throws -> Quad? {
         let fullSize = CGSize(width: fullResImage.width, height: fullResImage.height)
         guard fullSize.width >= 2, fullSize.height >= 2 else { return nil }
         let small = downscaled(fullResImage, maxDimension: detectionMaxDimension)
-        return try await detector.detectQuad(in: small, fullResolutionSize: fullSize)
+        return try await detector.detectQuad(in: small, fullResolutionSize: fullSize, mode: mode)
     }
 
     /// The quad that will actually be cropped: expanded outward by
