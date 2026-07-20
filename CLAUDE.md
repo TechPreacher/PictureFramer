@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What This App Is
 
-**PictureFramer** — an iOS (iPhone-only) SwiftUI app that imports photos of framed paintings/pictures from the photo library, auto-detects the outer edge of the artwork including its frame (Vision), perspective-corrects it so it appears perfectly straight (Core Image), adds a user-configurable pixel margin of *real background* equally on all four sides, and exports the result to the photo library. An optional AI step removes glass reflections: an on-device heuristic proposes a glare mask, the user refines it with a brush, and a cloud inpainting provider (OpenAI or Gemini, user's own API key) repaints only the masked pixels.
+**PictureFramer** — an iOS (iPhone-only) SwiftUI app that imports photos of framed paintings/pictures from the photo library, auto-detects the outer edge of the artwork including its frame (Vision), perspective-corrects it so it appears perfectly straight (Core Image), adds a user-configurable pixel margin of *real background* equally on all four sides, and exports the result to the photo library. A crop-mode toggle (picker screen + editor, persisted in UserDefaults) switches between this framed-with-wall crop and a painting-only crop that targets the painting inside the frame (nested-rectangle detection with outer-quad fallback) and forces the margin to zero. An optional AI step removes glass reflections: an on-device heuristic proposes a glare mask, the user refines it with a brush, and a cloud inpainting provider (OpenAI or Gemini, user's own API key) repaints only the masked pixels.
 
 ## Build / Run / Test Commands
 
