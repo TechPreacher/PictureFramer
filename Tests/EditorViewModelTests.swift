@@ -109,4 +109,38 @@ struct EditorViewModelTests {
             #expect(nearest <= allowed)
         }
     }
+
+    /// Regression for the concurrent re-detection race: rapidly toggling
+    /// framed -> paintingOnly -> framed without awaiting between switches
+    /// must cancel the first (stale) detection so it can never clobber the
+    /// second's result, even if the stale detection happens to finish
+    /// after the live one starts. Final state must reflect the LAST mode
+    /// switched to (.framed), with `quad` on the outer (frame) edge.
+    @Test @MainActor func rapidModeSwitchDiscardsStaleDetection() async throws {
+        let (defaults, cleanup) = makeDefaults()
+        defer { cleanup() }
+        let model = EditorViewModel(defaults: defaults)
+        let size = CGSize(width: 1200, height: 900)
+        let outer = FixtureImageFactory.axisAlignedQuad(in: size, inset: 150)
+        let inner = try #require(outer.expanded(by: -120))
+        let image = FixtureImageFactory.framedPaintingImage(
+            size: size, outerQuad: outer, innerQuad: inner)
+        model.setSourceForTesting(image, quad: outer)
+
+        model.cropMode = .paintingOnly
+        model.cropMode = .framed  // fires before the first switch's detection lands
+        await model.detectionTask?.value
+
+        #expect(model.cropMode == .framed)
+        let detected = try #require(model.quad)
+        // Re-detection must have landed on the frame (outer) edge, not the
+        // painting (inner) edge a stale paintingOnly detection would leave.
+        let allowed = max(size.width, size.height) * 0.035
+        for corner in detected.perimeterCorners {
+            let nearest = outer.perimeterCorners
+                .map { hypot(corner.x - $0.x, corner.y - $0.y) }
+                .min()!
+            #expect(nearest <= allowed)
+        }
+    }
 }

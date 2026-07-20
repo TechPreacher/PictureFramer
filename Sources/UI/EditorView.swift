@@ -127,6 +127,7 @@ struct EditorView: View {
                 Text("Painting Only").tag(CropMode.paintingOnly)
             }
             .pickerStyle(.segmented)
+            .disabled(model.stage == .exporting)
 
             Picker("View", selection: $model.showCorrectedPreview) {
                 Text("Adjust").tag(false)

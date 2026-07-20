@@ -25,7 +25,7 @@ final class EditorViewModel {
             guard cropMode != oldValue else { return }
             defaults.set(cropMode.rawValue, forKey: Self.cropModeKey)
             guard sourceImage != nil else { return }
-            invalidateCleaned()
+            detectionTask?.cancel()
             detectionTask = Task { await runDetection() }
         }
     }
@@ -197,13 +197,18 @@ final class EditorViewModel {
         detectionFailed = false
         panOffset = .zero
         do {
-            if let detected = try await pipeline.detectQuad(in: sourceImage, mode: cropMode) {
+            let detected = try await pipeline.detectQuad(in: sourceImage, mode: cropMode)
+            // A superseded (cancelled) detection must not clobber state a
+            // newer detection already wrote — discard the stale result.
+            guard !Task.isCancelled else { return }
+            if let detected {
                 quad = detected
             } else {
                 quad = Self.fallbackQuad(for: imagePixelSize)
                 detectionFailed = true
             }
         } catch {
+            guard !Task.isCancelled else { return }
             quad = Self.fallbackQuad(for: imagePixelSize)
             detectionFailed = true
         }
