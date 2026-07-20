@@ -17,6 +17,7 @@ struct EditorView: View {
         .padding()
         .navigationTitle("Straighten")
         .navigationBarTitleDisplayMode(.inline)
+        .onChange(of: model.showCorrectedPreview) { activeCorner = nil }
     }
 
     @ViewBuilder
