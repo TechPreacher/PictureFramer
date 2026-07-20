@@ -95,6 +95,8 @@
   .step h3 { margin: 1.1rem 0 .3rem; font-size: 1.15rem; }
   .step p { font-size: .95rem; color: var(--muted); }
   .steps-3 { grid-template-columns: repeat(auto-fit, minmax(200px, 240px)); justify-content: center; }
+  .steps-2 { grid-template-columns: repeat(auto-fit, minmax(240px, 300px)); justify-content: center; gap: 3rem 3rem; }
+  #crop-mode .step img { max-width: 280px; }
   #reflections img.reflection-hero {
     display: block;
     max-width: min(720px, 100%);
@@ -196,7 +198,7 @@
       </div>
       <div class="step">
         <span class="num">2</span>
-        <img src="assets/screen-02.png" alt="Editor showing automatically detected frame corners with drag handles" loading="lazy">
+        <img src="assets/screen-02.png" alt="Editor showing automatically detected frame corners with drag handles and the crop-mode toggle" loading="lazy">
         <h3>Automatic detection</h3>
         <p>The frame is found for you. Nudge a corner by hand if you like.</p>
       </div>
@@ -211,6 +213,23 @@
         <img src="assets/screen-04.png" alt="Confirmation screen: saved to your photo library" loading="lazy">
         <h3>Save</h3>
         <p>The full-resolution result lands straight back in your photo library.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="crop-mode">
+    <h2>Frame and wall — or just the painting</h2>
+    <p class="lead">Pick a mode the moment you open a photo, and switch any time while you edit. Keep the frame with a strip of wall around it, or crop to just the painting inside the frame. Your choice is remembered for next time.</p>
+    <div class="steps steps-2">
+      <div class="step">
+        <img src="assets/crop-mode-pick.png" alt="Start screen with the crop mode set to Painting Only" loading="lazy">
+        <h3>Choose Painting Only</h3>
+        <p>The start screen and the editor both carry a simple toggle. Painting Only tells PictureFramer to look <em>inside</em> the frame.</p>
+      </div>
+      <div class="step">
+        <img src="assets/crop-mode-result.png" alt="Editor in Painting Only mode: corner handles hug the painting inside the frame and the margin control is gone" loading="lazy">
+        <h3>Corners find the painting</h3>
+        <p>Detection snaps to the painting's edge inside the frame, and the background-margin control disappears — there's no wall to keep.</p>
       </div>
     </div>
   </section>
