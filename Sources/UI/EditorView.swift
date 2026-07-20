@@ -6,6 +6,8 @@ struct EditorView: View {
     /// Last drag translation, to turn the gesture's cumulative translation
     /// into per-tick deltas for panning.
     @State private var lastPanTranslation: CGSize = .zero
+    /// The corner currently being dragged — drives the magnifier loupe.
+    @State private var activeCorner: Quad.Corner?
 
     var body: some View {
         VStack(spacing: 12) {
@@ -15,6 +17,7 @@ struct EditorView: View {
         .padding()
         .navigationTitle("Straighten")
         .navigationBarTitleDisplayMode(.inline)
+        .onChange(of: model.showCorrectedPreview) { activeCorner = nil }
     }
 
     @ViewBuilder
@@ -36,9 +39,21 @@ struct EditorView: View {
                         QuadOverlayView(
                             quad: quad,
                             marginQuad: model.cropMode == .framed ? model.marginQuad : nil,
-                            mapper: mapper
-                        ) { corner, displayPoint in
-                            model.moveCorner(corner, toDisplayPoint: displayPoint, mapper: mapper)
+                            mapper: mapper,
+                            onCornerMoved: { corner, displayPoint in
+                                model.moveCorner(corner, toDisplayPoint: displayPoint, mapper: mapper)
+                            },
+                            onDragBegan: { activeCorner = $0 },
+                            onDragEnded: { activeCorner = nil }
+                        )
+                        if let activeCorner {
+                            MagnifierLoupeView(
+                                image: sourceImage,
+                                mapper: mapper,
+                                quad: quad,
+                                corner: activeCorner,
+                                areaSize: proxy.size
+                            )
                         }
                     }
                 }

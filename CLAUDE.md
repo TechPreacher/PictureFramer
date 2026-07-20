@@ -62,6 +62,7 @@ The load-bearing invariant: **canonical coordinate space = full-resolution sourc
 - Vision → canonical is a pure scale, **no flip** (`Sources/Core/Coordinates/VisionQuadConversion.swift` — the only place Vision-normalized coordinates are interpreted).
 - Canonical → `CIPerspectiveCorrection` is identity (corners pass straight into the filter).
 - The **only y-flip in the entire app** lives in `Sources/Core/Coordinates/DisplayMapper.swift`, which maps canonical ↔ SwiftUI display space of the aspect-fitted image. All UI gesture math goes through it.
+- The corner-drag **magnifier loupe** keeps its projection + placement math in a pure `Sources/Core/Coordinates/LoupeGeometry.swift` (unit-tested); `Sources/UI/MagnifierLoupeView.swift` renders it and consumes `DisplayMapper` — it introduces no new flip or coordinate convention.
 - EXIF orientation is baked in at image load (`EditorViewModel.normalizedCGImage`), so canonical space never sees orientation.
 
 Pipeline (`Sources/Core/Pipeline/FramingPipeline.swift`): detect → margin → correct.
