@@ -17,6 +17,31 @@ final class EditorViewModel {
 
     var stage: Stage = .picking
 
+    /// Whether the crop keeps the frame + wall margin or just the painting.
+    /// Persisted; switching with a photo loaded re-runs detection because
+    /// the target quad (frame edge vs painting edge) changes wholesale.
+    var cropMode: CropMode {
+        didSet {
+            guard cropMode != oldValue else { return }
+            defaults.set(cropMode.rawValue, forKey: Self.cropModeKey)
+            guard sourceImage != nil else { return }
+            invalidateCleaned()
+            detectionTask = Task { await runDetection() }
+        }
+    }
+    /// Re-detection spawned by a mode switch; exposed so tests can await it.
+    private(set) var detectionTask: Task<Void, Never>?
+
+    /// Margin actually applied to rendering and detection — painting-only
+    /// mode crops the frame away, so a wall margin never applies there.
+    /// The slider value itself survives mode round trips.
+    var effectiveMarginPixels: Double {
+        cropMode == .paintingOnly ? 0 : marginPixels
+    }
+
+    private static let cropModeKey = "cropMode"
+    private let defaults: UserDefaults
+
     var selection: PhotosPickerItem? {
         didSet {
             guard let selection else { return }
@@ -90,7 +115,8 @@ final class EditorViewModel {
         remover: ReflectionRemover = ReflectionRemover(),
         inpainterFactory: @escaping @Sendable (AIProvider) -> any InpaintingProvider = {
             $0.makeInpainter()
-        }
+        },
+        defaults: UserDefaults = .standard
     ) {
         self.pipeline = pipeline
         self.exporter = exporter
@@ -99,6 +125,9 @@ final class EditorViewModel {
         self.remover = remover
         self.inpainterFactory = inpainterFactory
         self.isProviderConfigured = settings.isConfigured
+        self.defaults = defaults
+        self.cropMode =
+            CropMode(rawValue: defaults.string(forKey: Self.cropModeKey) ?? "") ?? .framed
     }
 
     /// Call after the settings sheet dismisses so the AI-provider-dependent
@@ -118,7 +147,7 @@ final class EditorViewModel {
         guard let quad, let sourceImage else { return nil }
         return pipeline.effectiveQuad(
             from: quad,
-            marginPixels: CGFloat(marginPixels),
+            marginPixels: CGFloat(effectiveMarginPixels),
             imageSize: CGSize(width: sourceImage.width, height: sourceImage.height),
             panOffset: panOffset
         )
@@ -168,7 +197,7 @@ final class EditorViewModel {
         detectionFailed = false
         panOffset = .zero
         do {
-            if let detected = try await pipeline.detectQuad(in: sourceImage) {
+            if let detected = try await pipeline.detectQuad(in: sourceImage, mode: cropMode) {
                 quad = detected
             } else {
                 quad = Self.fallbackQuad(for: imagePixelSize)
@@ -259,7 +288,7 @@ final class EditorViewModel {
         }
         guard let previewBase, let quad else { return }
         previewTask?.cancel()
-        let margin = CGFloat(marginPixels)
+        let margin = CGFloat(effectiveMarginPixels)
         let scale = previewScale
         let pan = panOffset
         let pipeline = pipeline
@@ -308,7 +337,7 @@ final class EditorViewModel {
             return
         }
 
-        let margin = CGFloat(marginPixels)
+        let margin = CGFloat(effectiveMarginPixels)
         let pan = panOffset
         let pipeline = pipeline
         let corrected = await Task.detached(priority: .userInitiated) {
@@ -333,7 +362,7 @@ final class EditorViewModel {
     func redetectReflections() {
         guard let correctedFullRes, var mask = reflectionMask else { return }
         mask.detectedRaster = reflectionDetector.detectMask(
-            in: correctedFullRes, excludingBorder: CGFloat(marginPixels))
+            in: correctedFullRes, excludingBorder: CGFloat(effectiveMarginPixels))
         reflectionMask = mask
     }
 
@@ -438,7 +467,7 @@ final class EditorViewModel {
         if let cleanedImage {
             rendered = cleanedImage
         } else {
-            let margin = CGFloat(marginPixels)
+            let margin = CGFloat(effectiveMarginPixels)
             let pan = panOffset
             let pipeline = pipeline
             rendered = await Task.detached(priority: .userInitiated) {
@@ -473,6 +502,8 @@ final class EditorViewModel {
     func reset() {
         loadTask?.cancel()
         previewTask?.cancel()
+        detectionTask?.cancel()
+        detectionTask = nil
         selection = nil
         sourceImage = nil
         quad = nil
