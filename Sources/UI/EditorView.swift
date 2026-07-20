@@ -35,7 +35,7 @@ struct EditorView: View {
                     if let quad = model.quad {
                         QuadOverlayView(
                             quad: quad,
-                            marginQuad: model.marginQuad,
+                            marginQuad: model.cropMode == .framed ? model.marginQuad : nil,
                             mapper: mapper
                         ) { corner, displayPoint in
                             model.moveCorner(corner, toDisplayPoint: displayPoint, mapper: mapper)
@@ -122,13 +122,22 @@ struct EditorView: View {
                 }
             }
 
+            Picker("Crop mode", selection: $model.cropMode) {
+                Text("With Frame & Wall").tag(CropMode.framed)
+                Text("Painting Only").tag(CropMode.paintingOnly)
+            }
+            .pickerStyle(.segmented)
+            .disabled(model.stage == .exporting)
+
             Picker("View", selection: $model.showCorrectedPreview) {
                 Text("Adjust").tag(false)
                 Text("Preview").tag(true)
             }
             .pickerStyle(.segmented)
 
-            MarginControlView(marginPixels: $model.marginPixels)
+            if model.cropMode == .framed {
+                MarginControlView(marginPixels: $model.marginPixels)
+            }
 
             HStack {
                 Button {

@@ -49,11 +49,21 @@ struct ContentView: View {
                 .clipShape(RoundedRectangle(cornerRadius: 16))
                 .padding(.horizontal)
                 .accessibilityLabel("A crooked framed painting becomes perfectly straight")
-            Text("Pick a photo of a framed picture or painting. PictureFramer straightens it and keeps a strip of background around the frame.")
-                .font(.callout)
-                .multilineTextAlignment(.center)
-                .foregroundStyle(.secondary)
-                .padding(.horizontal)
+            Picker("Crop mode", selection: $model.cropMode) {
+                Text("With Frame & Wall").tag(CropMode.framed)
+                Text("Painting Only").tag(CropMode.paintingOnly)
+            }
+            .pickerStyle(.segmented)
+            .padding(.horizontal)
+            Text(
+                model.cropMode == .framed
+                    ? "Pick a photo of a framed picture or painting. PictureFramer straightens it and keeps a strip of background around the frame."
+                    : "Pick a photo of a framed picture or painting. PictureFramer straightens it and crops to just the painting — no frame, no wall."
+            )
+            .font(.callout)
+            .multilineTextAlignment(.center)
+            .foregroundStyle(.secondary)
+            .padding(.horizontal)
             if let errorMessage = model.errorMessage {
                 Text(errorMessage)
                     .font(.footnote)

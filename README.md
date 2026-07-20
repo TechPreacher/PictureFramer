@@ -6,9 +6,10 @@ Photograph a painting in a museum or at home — the photo is usually shot at an
 
 ## Features
 
-- **Automatic detection** of the painting/frame outline (Vision), with draggable corner handles as fallback when detection misses.
+- **Crop mode**: choose upfront (and switch any time in the editor) between **With Frame & Wall** — the framed picture plus a strip of real background — and **Painting Only**, which crops to just the painting inside the frame. The choice is remembered across launches.
+- **Automatic detection** of the painting/frame outline (Vision), with draggable corner handles as fallback when detection misses. In Painting Only mode, detection targets the painting *inside* the frame (nested-rectangle detection), falling back to the outer edge when it can't find an inner one.
 - **Perspective correction** (Core Image `CIPerspectiveCorrection`) — fixes rotation and horizontal/vertical keystone in one step.
-- **Background margin**: a user-configurable number of pixels (0–500, equal on all four sides) of *real background pixels* kept outside the frame — never synthetic padding.
+- **Background margin**: in With Frame & Wall mode, a user-configurable number of pixels (0–500, equal on all four sides) of *real background pixels* kept outside the frame — never synthetic padding. (Hidden in Painting Only mode, where there's no wall to keep.)
 - **Pan to recenter**: drag the corrected preview when a shadow skewed the detected bounds off-center.
 - **Live preview** on a downscaled copy for speed; export renders from the original full-resolution pixels.
 - **AI reflection removal** (optional): brush over glass glare on a pinch-zoomable canvas (or tap Auto-detect for an on-device suggested mask); a cloud inpainting model (OpenAI `gpt-image-1` or Gemini 2.5 Flash Image, your own API key) reconstructs the artwork underneath. Only masked pixels can change — everything outside the mask stays bit-identical to the original, enforced client-side and covered by tests.

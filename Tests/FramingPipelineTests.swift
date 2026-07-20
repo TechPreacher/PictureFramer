@@ -1,4 +1,5 @@
 import CoreGraphics
+import Foundation
 import Testing
 @testable import PictureFramer
 
@@ -183,5 +184,24 @@ struct FramingPipelineTests {
         // Rendering a 1×1 crop should not crash; nil or a tiny image are
         // both acceptable.
         _ = pipeline.finalImage(fullResImage: image, quad: quad, marginPixels: 10)
+    }
+
+    @Test func detectQuadForwardsPaintingOnlyMode() async throws {
+        let size = CGSize(width: 1200, height: 900)
+        let outer = FixtureImageFactory.axisAlignedQuad(in: size, inset: 150)
+        let inner = try #require(outer.expanded(by: -120))
+        let image = FixtureImageFactory.framedPaintingImage(
+            size: size, outerQuad: outer, innerQuad: inner)
+        let detected = try #require(
+            try await FramingPipeline().detectQuad(in: image, mode: .paintingOnly))
+        // Painting mode must land on the inner quad, not the frame. Vision
+        // is not pixel-exact; assert each corner within 3.5% of max dim.
+        let allowed = max(size.width, size.height) * 0.035
+        for corner in detected.perimeterCorners {
+            let nearest = inner.perimeterCorners
+                .map { hypot(corner.x - $0.x, corner.y - $0.y) }
+                .min()!
+            #expect(nearest <= allowed)
+        }
     }
 }
