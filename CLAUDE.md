@@ -98,4 +98,4 @@ Pipeline (`Sources/Core/Pipeline/FramingPipeline.swift`): detect → margin → 
 ## Process notes
 
 - Feature work: spec in `docs/superpowers/specs/`, plan in `docs/superpowers/plans/`, then implement on a `feature/*` branch; PRs to `main` on github.com/TechPreacher/PictureFramer (switch gh account to `TechPreacher` for PR operations).
-- `.superpowers/` is local scratch (gitignored) — session ledgers and reports live there.
+- `.superpowers/` is local scratch (gitignored) — session ledgers and reports live there. For implementation tasks, use subagents.
