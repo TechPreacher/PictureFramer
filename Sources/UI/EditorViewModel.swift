@@ -159,24 +159,45 @@ final class EditorViewModel {
         stage = .loading
         errorMessage = nil
         do {
-            guard let data = try await item.loadTransferable(type: Data.self),
-                  let image = Self.normalizedCGImage(from: data) else {
+            guard let data = try await item.loadTransferable(type: Data.self) else {
                 errorMessage = "Couldn't load that photo."
                 stage = .picking
                 return
             }
-            sourceImage = image
-            let base = await Task.detached(priority: .userInitiated) {
-                downscaled(image, maxDimension: 1600)
-            }.value
-            previewBase = base
-            previewScale = CGFloat(base.width) / CGFloat(image.width)
-            await runDetection()
+            await load(data: data)
         } catch {
             guard !Task.isCancelled else { return }
             errorMessage = "Couldn't load that photo."
             stage = .picking
         }
+    }
+
+    /// Shared load funnel for both photo-picker and camera captures. Decodes
+    /// with EXIF orientation baked in, prepares the preview base, and runs
+    /// detection. Internal (not private) so tests can drive it directly.
+    func load(data: Data) async {
+        stage = .loading
+        errorMessage = nil
+        guard let image = Self.normalizedCGImage(from: data) else {
+            errorMessage = "Couldn't load that photo."
+            stage = .picking
+            return
+        }
+        sourceImage = image
+        let base = await Task.detached(priority: .userInitiated) {
+            downscaled(image, maxDimension: 1600)
+        }.value
+        previewBase = base
+        previewScale = CGFloat(base.width) / CGFloat(image.width)
+        await runDetection()
+    }
+
+    /// Entry point for the in-app camera: hand over a fresh capture exactly
+    /// as if it had been picked from the library. The capture is never
+    /// written to the photo library.
+    func loadCapturedPhoto(_ data: Data) {
+        loadTask?.cancel()
+        loadTask = Task { await load(data: data) }
     }
 
     /// Decodes image data with EXIF orientation baked in, so canonical

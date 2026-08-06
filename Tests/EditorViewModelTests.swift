@@ -143,4 +143,41 @@ struct EditorViewModelTests {
             #expect(nearest <= allowed)
         }
     }
+
+    @Test @MainActor func loadDataReachesAdjustingWithDetectedQuad() async throws {
+        let (defaults, cleanup) = makeDefaults()
+        defer { cleanup() }
+        let model = EditorViewModel(defaults: defaults)
+        let size = CGSize(width: 1200, height: 900)
+        let outer = FixtureImageFactory.axisAlignedQuad(in: size, inset: 150)
+        let inner = try #require(outer.expanded(by: -120))
+        let image = FixtureImageFactory.framedPaintingImage(
+            size: size, outerQuad: outer, innerQuad: inner)
+        let data = try PhotoLibraryExporter().encodeJPEG(image)
+
+        await model.load(data: data)
+
+        #expect(model.stage == .adjusting)
+        let detected = try #require(model.quad)
+        // Default framed mode: quad must land near the outer (frame) edge.
+        let allowed = max(size.width, size.height) * 0.035
+        for corner in detected.perimeterCorners {
+            let nearest = outer.perimeterCorners
+                .map { hypot(corner.x - $0.x, corner.y - $0.y) }
+                .min()!
+            #expect(nearest <= allowed)
+        }
+    }
+
+    @Test @MainActor func loadGarbageDataShowsErrorAndReturnsToPicking() async {
+        let (defaults, cleanup) = makeDefaults()
+        defer { cleanup() }
+        let model = EditorViewModel(defaults: defaults)
+
+        await model.load(data: Data([0xDE, 0xAD, 0xBE, 0xEF]))
+
+        #expect(model.stage == .picking)
+        #expect(model.errorMessage == "Couldn't load that photo.")
+        #expect(model.sourceImage == nil)
+    }
 }

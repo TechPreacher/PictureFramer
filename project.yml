@@ -26,6 +26,9 @@ targets:
         ITSAppUsesNonExemptEncryption: false
         NSPhotoLibraryAddUsageDescription: >-
           PictureFramer saves your straightened pictures to your photo library.
+        NSCameraUsageDescription: >-
+          PictureFramer uses the camera to shoot pictures of framed paintings
+          for straightening.
         UISupportedInterfaceOrientations:
           - UIInterfaceOrientationPortrait
         UISupportedInterfaceOrientations~ipad:

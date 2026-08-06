@@ -2,7 +2,7 @@
 
 An iPhone app that turns crooked photos of framed paintings into perfectly straight ones.
 
-Photograph a painting in a museum or at home — the photo is usually shot at an angle, tilted and keystoned. PictureFramer imports it from your photo library, automatically finds the outer edge of the artwork including its frame, corrects perspective and rotation in one transform, keeps a configurable strip of the real background wall around the frame, and saves the result back to your photo library.
+Photograph a painting in a museum or at home — the photo is usually shot at an angle, tilted and keystoned. PictureFramer imports it from your photo library, automatically finds the outer edge of the artwork including its frame, corrects perspective and rotation in one transform, keeps a configurable strip of the real background wall around the frame, and saves the result back to your photo library. Alternatively, photos can be shot directly in the app with the system camera ("Take Photo"); the capture goes straight into detection and is never saved to the library — only the straightened export is.
 
 ## Features
 
