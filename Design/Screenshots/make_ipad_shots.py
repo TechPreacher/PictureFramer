@@ -44,6 +44,9 @@ SHOTS = [
     ("iPad_6.png", "Mark it — zoom in\nfor fine work", "device"),
     ("iPad_7.png", "AI restores the\nartwork underneath", "device"),
     ("iPad_8.png", "Your AI provider,\nyour key", "device"),
+    ("iPad_9.png", "Or shoot it right\nin the app", "device"),
+    ("iPad_10.png", "Frame it with the\nsystem camera", "device"),
+    ("iPad_11.png", "Straight from\nthe camera", "device"),
 ]
 
 

@@ -43,6 +43,9 @@ CAPTIONS = [
     "Mark it — zoom in\nfor fine work",
     "AI restores the\nartwork underneath",
     "Your AI provider,\nyour key",
+    "Or shoot it right\nin the app",
+    "Frame it with the\nsystem camera",
+    "Straight from\nthe camera",
 ]
 
 
