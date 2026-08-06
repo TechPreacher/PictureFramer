@@ -4,6 +4,8 @@ import SwiftUI
 struct ContentView: View {
     @State private var model = EditorViewModel()
     @State private var showSettings = false
+    @State private var showCamera = false
+    @State private var cameraDenied = false
 
     var body: some View {
         NavigationStack {
@@ -37,6 +39,12 @@ struct ContentView: View {
             }
             .sheet(isPresented: $showSettings, onDismiss: { model.refreshProviderConfiguration() }) {
                 SettingsView(settings: model.settings)
+            }
+            .fullScreenCover(isPresented: $showCamera) {
+                CameraPicker { data in
+                    model.loadCapturedPhoto(data)
+                }
+                .ignoresSafeArea()
             }
         }
     }
@@ -73,6 +81,28 @@ struct ContentView: View {
                 Label("Choose Photo", systemImage: "photo.on.rectangle")
             }
             .buttonStyle(.borderedProminent)
+            if CameraPicker.isAvailable {
+                Button {
+                    if CameraPicker.isAccessDenied {
+                        cameraDenied = true
+                    } else {
+                        cameraDenied = false
+                        showCamera = true
+                    }
+                } label: {
+                    Label("Take Photo", systemImage: "camera")
+                }
+                .buttonStyle(.bordered)
+            }
+            if cameraDenied, let settingsURL = URL(string: UIApplication.openSettingsURLString) {
+                HStack {
+                    Text("Camera access is off.")
+                        .font(.footnote)
+                        .foregroundStyle(.red)
+                    Link("Open Settings", destination: settingsURL)
+                        .font(.footnote)
+                }
+            }
         }
         .padding()
     }
