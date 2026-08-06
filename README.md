@@ -7,6 +7,7 @@ Photograph a painting in a museum or at home — the photo is usually shot at an
 ## Features
 
 - **Crop mode**: choose upfront (and switch any time in the editor) between **With Frame & Wall** — the framed picture plus a strip of real background — and **Painting Only**, which crops to just the painting inside the frame. The choice is remembered across launches.
+- **In-app camera** ("Take Photo"): shoot the painting directly with the system camera instead of importing — the capture feeds the same detection pipeline and is never saved to the library; only the straightened export is. (The button appears only on devices with a camera.)
 - **Automatic detection** of the painting/frame outline (Vision), with draggable corner handles as fallback when detection misses. In Painting Only mode, detection targets the painting *inside* the frame (nested-rectangle detection), falling back to the outer edge when it can't find an inner one.
 - **Magnifier loupe**: while you drag a corner handle, a zoomed circle appears opposite your finger showing the exact landing point — crosshair plus the converging frame edges — so your finger never hides where the corner goes.
 - **Perspective correction** (Core Image `CIPerspectiveCorrection`) — fixes rotation and horizontal/vertical keystone in one step.
@@ -73,7 +74,7 @@ Sources/
                    orchestrator; compositor guarantees outside-mask pixels
                    stay bit-identical
     Config/        provider settings; API keys behind a Keychain seam
-  UI/              SwiftUI shell: picker → editor (quad overlay, margin, pan)
+  UI/              SwiftUI shell: picker/camera → editor (quad overlay, margin, pan)
                    → optional reflection removal (mask brush, before/after)
                    → export; settings sheet for AI providers
 Tests/             Swift Testing unit suites + fixture/pixel-sampling helpers
