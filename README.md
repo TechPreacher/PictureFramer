@@ -22,7 +22,7 @@ Photograph a painting in a museum or at home — the photo is usually shot at an
 
 ## Requirements
 
-- Xcode 26+ (iOS 26.5 simulator platform; run `xcodebuild -downloadPlatform iOS` if destinations come up empty)
+- Xcode 27+ (iOS 27.0 simulator platform; run `xcodebuild -downloadPlatform iOS` if destinations come up empty)
 - [XcodeGen](https://github.com/yonaskolb/XcodeGen) (`brew install xcodegen`)
 - iOS 17.0+ deployment target, iPhone only
 - Optional: an OpenAI or Google Gemini API key (entered in the app's Settings) to use reflection removal — everything else works without it
@@ -34,7 +34,7 @@ The Xcode project is generated from `project.yml` and not checked in:
 ```sh
 xcodegen generate
 xcodebuild -project PictureFramer.xcodeproj -scheme PictureFramer \
-  -destination 'platform=iOS Simulator,name=iPhone 17 Pro' build
+  -destination 'platform=iOS Simulator,name=iPhone 18 Pro,OS=27.0' build
 ```
 
 Or open `PictureFramer.xcodeproj` in Xcode after generating.
@@ -44,7 +44,7 @@ Or open `PictureFramer.xcodeproj` in Xcode after generating.
 ```sh
 # Full suite: unit tests (Swift Testing) + end-to-end UI test (XCUITest)
 xcodebuild -project PictureFramer.xcodeproj -scheme PictureFramer \
-  -destination 'platform=iOS Simulator,name=iPhone 17 Pro' test
+  -destination 'platform=iOS Simulator,name=iPhone 18 Pro,OS=27.0' test
 ```
 
 Unit tests generate synthetic fixture images headlessly (no bundled assets) and pixel-sample the outputs. The UI test drives the real photo picker; seed the simulator first:
