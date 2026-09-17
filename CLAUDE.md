@@ -15,24 +15,24 @@ xcodegen generate
 
 # Build
 xcodebuild -project PictureFramer.xcodeproj -scheme PictureFramer \
-  -destination 'platform=iOS Simulator,name=iPhone 17 Pro' build
+  -destination 'platform=iOS Simulator,name=iPhone 18 Pro,OS=27.0' build
 
 # All tests (unit = Swift Testing, E2E = XCUITest)
 xcodebuild -project PictureFramer.xcodeproj -scheme PictureFramer \
-  -destination 'platform=iOS Simulator,name=iPhone 17 Pro' test
+  -destination 'platform=iOS Simulator,name=iPhone 18 Pro,OS=27.0' test
 
 # One suite / one test
 xcodebuild ... test -only-testing:PictureFramerTests/QuadExpansionTests
 xcodebuild ... test -only-testing:PictureFramerTests/QuadExpansionTests/zeroMarginReturnsIdenticalQuad
 
 # Manual run in simulator
-xcrun simctl boot "iPhone 17 Pro"
+xcrun simctl boot "iPhone 18 Pro"
 xcrun simctl install booted <DerivedData>/Build/Products/Debug-iphonesimulator/PictureFramer.app
 xcrun simctl addmedia booted <some-framed-picture>.jpg   # seed the photo library
 xcrun simctl launch booted com.corti.PictureFramer
 ```
 
-Xcode 26.6 requires the iOS 26.5 simulator platform (`xcodebuild -downloadPlatform iOS` if destinations come up empty).
+Xcode 27.0 with the iOS 27.0 simulator platform (`xcodebuild -downloadPlatform iOS` if destinations come up empty). The iOS 27.0 runtime ships iPhone 18 Pro / 18 Pro Max / 17 / 17e / Air — there is no iPhone 17 Pro, so always pin `OS=27.0` in the destination or you silently hit a leftover iOS 26.x device.
 
 ### TestFlight .ipa
 
