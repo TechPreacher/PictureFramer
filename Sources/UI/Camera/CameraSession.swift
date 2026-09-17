@@ -49,12 +49,21 @@ final class CameraSession: NSObject, AVCapturePhotoCaptureDelegate, @unchecked S
         }
     }
 
-    /// The preview layer showing this session; drives rotation.
+    /// The preview layer showing this session; drives rotation. Re-attaching
+    /// a different layer (SwiftUI recreated the preview view) detaches the
+    /// old one and rebuilds the rotation coordinator for the new one.
     func attach(previewLayer: AVCaptureVideoPreviewLayer) {
+        if let old = self.previewLayer, old !== previewLayer {
+            old.session = nil
+        }
         previewLayer.session = session
         previewLayer.videoGravity = .resizeAspect
         self.previewLayer = previewLayer
-        sessionQueue.async { [self] in makeRotationCoordinatorIfReady() }
+        sessionQueue.async { [self] in
+            rotationObservation = nil
+            rotationCoordinator = nil
+            makeRotationCoordinatorIfReady()
+        }
     }
 
     private func configure() {

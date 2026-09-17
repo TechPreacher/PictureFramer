@@ -5,6 +5,12 @@ import UIKit
 /// Full-screen in-app camera. The preview follows the device orientation;
 /// the shutter sits below the preview on tall canvases and beside it on
 /// wide ones, so landscape paintings can be shot in landscape.
+///
+/// The arrangement switches through `AnyLayout`, never through separate
+/// `VStack`/`HStack` branches: a branch change would give `CameraPreview`
+/// a new identity, tear down the `UIView` whose layer is the session's
+/// preview layer, and create another — on device that blanks the preview
+/// and can crash when the old layer deallocates under a running session.
 struct CameraCaptureView: View {
     /// Called with the JPEG data of the capture.
     let onCapture: (Data) -> Void
@@ -17,21 +23,16 @@ struct CameraCaptureView: View {
 
     var body: some View {
         GeometryReader { proxy in
+            let isWide = CanvasShape(size: proxy.size) == .wide
+            let outer: AnyLayout = isWide
+                ? AnyLayout(HStackLayout(spacing: 0))
+                : AnyLayout(VStackLayout(spacing: 0))
             ZStack {
                 Color.black.ignoresSafeArea()
-                switch CanvasShape(size: proxy.size) {
-                case .tall:
-                    VStack(spacing: 0) {
-                        preview
-                        controls(axis: .horizontal)
-                            .frame(height: barSize)
-                    }
-                case .wide:
-                    HStack(spacing: 0) {
-                        preview
-                        controls(axis: .vertical)
-                            .frame(width: barSize)
-                    }
+                outer {
+                    preview
+                    controls(isWide: isWide)
+                        .frame(width: isWide ? barSize : nil, height: isWide ? nil : barSize)
                 }
             }
         }
@@ -47,20 +48,16 @@ struct CameraCaptureView: View {
             .accessibilityLabel("Camera preview")
     }
 
-    private enum Axis { case horizontal, vertical }
-
     @ViewBuilder
-    private func controls(axis: Axis) -> some View {
-        let layout: AnyLayout = axis == .horizontal ? AnyLayout(HStackLayout()) : AnyLayout(VStackLayout())
-        layout {
+    private func controls(isWide: Bool) -> some View {
+        let bar: AnyLayout = isWide ? AnyLayout(VStackLayout()) : AnyLayout(HStackLayout())
+        bar {
             Button("Cancel") { dismiss() }
                 .foregroundStyle(.white)
-                .frame(maxWidth: axis == .horizontal ? .infinity : nil,
-                       maxHeight: axis == .vertical ? .infinity : nil)
+                .frame(maxWidth: isWide ? nil : .infinity, maxHeight: isWide ? .infinity : nil)
             shutter
             Color.clear
-                .frame(maxWidth: axis == .horizontal ? .infinity : nil,
-                       maxHeight: axis == .vertical ? .infinity : nil)
+                .frame(maxWidth: isWide ? nil : .infinity, maxHeight: isWide ? .infinity : nil)
         }
         .padding(12)
     }
@@ -88,7 +85,8 @@ struct CameraCaptureView: View {
     }
 }
 
-/// UIView whose backing layer is the session's preview layer.
+/// UIView whose backing layer is the session's preview layer. Must keep a
+/// stable identity for the life of the capture view (see above).
 private struct CameraPreview: UIViewRepresentable {
     let session: CameraSession
 
