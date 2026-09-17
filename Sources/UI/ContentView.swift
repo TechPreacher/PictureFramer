@@ -107,7 +107,7 @@ struct ContentView: View {
                 Label("Choose Photo", systemImage: "photo.on.rectangle")
             }
             .buttonStyle(.borderedProminent)
-            if CameraSession.isAvailable {
+            if CameraSession.isAvailable || ProcessInfo.processInfo.arguments.contains("-ShowCameraWithoutHardware") {
                 Button {
                     if CameraSession.isAccessDenied {
                         cameraDenied = true

@@ -138,6 +138,35 @@ final class PictureFramerUITests: XCTestCase {
         )
     }
 
+    /// Regression: rotating with the in-app camera open used to blank the
+    /// whole view (and crash on hardware) because the preview's UIView was
+    /// recreated on every layout-branch change. The simulator has no camera,
+    /// so the button is forced visible with a launch argument; the session
+    /// simply never configures.
+    @MainActor
+    func testCameraViewSurvivesRotation() throws {
+        defer { XCUIDevice.shared.orientation = .portrait }
+        XCUIDevice.shared.orientation = .portrait
+        let app = XCUIApplication()
+        app.launchArguments += ["-ShowCameraWithoutHardware"]
+        app.launch()
+        app.buttons["Take Photo"].firstMatch.tap()
+        let shutter = app.buttons["Take Photo"].firstMatch
+        XCTAssertTrue(app.buttons["Cancel"].waitForExistence(timeout: 5), "camera view did not open")
+
+        XCUIDevice.shared.orientation = .landscapeLeft
+        Thread.sleep(forTimeInterval: 2)
+        XCTAssertTrue(shutter.isHittable, "shutter unreachable after rotating to landscape")
+        XCTAssertGreaterThan(shutter.frame.minX, app.frame.midX, "shutter should sit beside the preview in landscape")
+
+        XCUIDevice.shared.orientation = .portrait
+        Thread.sleep(forTimeInterval: 2)
+        XCTAssertTrue(shutter.isHittable, "shutter unreachable after rotating back to portrait")
+        XCTAssertGreaterThan(shutter.frame.minY, app.frame.midY, "shutter should sit under the preview in portrait")
+        app.buttons["Cancel"].firstMatch.tap()
+        XCTAssertTrue(app.buttons["Choose Photo"].waitForExistence(timeout: 5), "cancel did not return to the picker")
+    }
+
     /// A revoked add-only permission must surface the error message and a
     /// Settings deep link — and keep the editor state intact.
     ///
