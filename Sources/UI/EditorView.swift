@@ -10,8 +10,9 @@ struct EditorView: View {
     @State private var activeCorner: Quad.Corner?
 
     var body: some View {
-        VStack(spacing: 12) {
+        AdaptiveEditorLayout {
             imageArea
+        } controls: {
             controls
         }
         .padding()

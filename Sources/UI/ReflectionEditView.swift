@@ -29,8 +29,9 @@ struct ReflectionEditView: View {
     @State private var zoomScale: CGFloat = 1
 
     var body: some View {
-        VStack(spacing: 12) {
+        AdaptiveEditorLayout {
             imageArea
+        } controls: {
             controls
         }
         .padding()
