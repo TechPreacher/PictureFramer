@@ -2,12 +2,12 @@
 
 An iPhone app that turns crooked photos of framed paintings into perfectly straight ones.
 
-Photograph a painting in a museum or at home — the photo is usually shot at an angle, tilted and keystoned. PictureFramer imports it from your photo library, automatically finds the outer edge of the artwork including its frame, corrects perspective and rotation in one transform, keeps a configurable strip of the real background wall around the frame, and saves the result back to your photo library. Alternatively, photos can be shot directly in the app with the system camera ("Take Photo"); the capture goes straight into detection and is never saved to the library — only the straightened export is.
+Photograph a painting in a museum or at home — the photo is usually shot at an angle, tilted and keystoned. PictureFramer imports it from your photo library, automatically finds the outer edge of the artwork including its frame, corrects perspective and rotation in one transform, keeps a configurable strip of the real background wall around the frame, and saves the result back to your photo library. Alternatively, photos can be shot directly in the app with the built-in camera ("Take Photo"), in portrait or landscape; the capture goes straight into detection and is never saved to the library — only the straightened export is.
 
 ## Features
 
 - **Crop mode**: choose upfront (and switch any time in the editor) between **With Frame & Wall** — the framed picture plus a strip of real background — and **Painting Only**, which crops to just the painting inside the frame. The choice is remembered across launches.
-- **In-app camera** ("Take Photo"): shoot the painting directly with the system camera instead of importing — the capture feeds the same detection pipeline and is never saved to the library; only the straightened export is. (The button appears only on devices with a camera.)
+- **In-app camera** ("Take Photo"): shoot the painting directly instead of importing — in landscape too, handy for wide paintings — the capture feeds the same detection pipeline and is never saved to the library; only the straightened export is. (The button appears only on devices with a camera.)
 - **Automatic detection** of the painting/frame outline (Vision), with draggable corner handles as fallback when detection misses. In Painting Only mode, detection targets the painting *inside* the frame (nested-rectangle detection), falling back to the outer edge when it can't find an inner one.
 - **Magnifier loupe**: while you drag a corner handle, a zoomed circle appears opposite your finger showing the exact landing point — crosshair plus the converging frame edges — so your finger never hides where the corner goes.
 - **Perspective correction** (Core Image `CIPerspectiveCorrection`) — fixes rotation and horizontal/vertical keystone in one step.
@@ -24,7 +24,7 @@ Photograph a painting in a museum or at home — the photo is usually shot at an
 
 - Xcode 27+ (iOS 27.0 simulator platform; run `xcodebuild -downloadPlatform iOS` if destinations come up empty)
 - [XcodeGen](https://github.com/yonaskolb/XcodeGen) (`brew install xcodegen`)
-- iOS 17.0+ deployment target, iPhone only
+- iOS 17.0+ deployment target, iPhone and iPad, portrait and landscape
 - Optional: an OpenAI or Google Gemini API key (entered in the app's Settings) to use reflection removal — everything else works without it
 
 ## Building

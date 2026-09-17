@@ -4,39 +4,42 @@ import Testing
 
 @Suite struct EditorLayoutTests {
 
-    @Test func compactWidthAlwaysStacks() {
-        #expect(EditorLayout.resolve(canvasSize: CGSize(width: 390, height: 844), isRegularWidth: false) == .stacked)
-        #expect(EditorLayout.resolve(canvasSize: CGSize(width: 844, height: 390), isRegularWidth: false) == .stacked)
+    @Test func phonePortraitStacks() {
+        #expect(EditorLayout.resolve(canvasSize: CGSize(width: 390, height: 844)) == .stacked)
     }
 
-    /// iPhone Duo inner display, portrait pose: regular width but taller
-    /// than wide — keep the stack so the picture gets the height.
-    @Test func regularWidthPortraitStacks() {
-        #expect(EditorLayout.resolve(canvasSize: CGSize(width: 669, height: 951), isRegularWidth: true) == .stacked)
+    /// Phone landscape: the stack would leave <100 pt for the image, and the
+    /// short height gets the wider (half-width, still capped) column.
+    @Test func phoneLandscapeGoesSideBySideWithWiderColumn() {
+        let layout = EditorLayout.resolve(canvasSize: CGSize(width: 844, height: 390))
+        #expect(layout == .sideBySide(controlsWidth: min(380, 844 * 0.5)))
+    }
+
+    @Test func shortCanvasThresholdIsExclusive() {
+        #expect(EditorLayout.resolve(canvasSize: CGSize(width: 800, height: 500)) == .sideBySide(controlsWidth: 800 * 0.42))
+        #expect(EditorLayout.resolve(canvasSize: CGSize(width: 800, height: 499)) == .sideBySide(controlsWidth: 380))
+    }
+
+    /// iPhone Duo inner display, portrait pose.
+    @Test func duoPortraitStacks() {
+        #expect(EditorLayout.resolve(canvasSize: CGSize(width: 669, height: 951)) == .stacked)
     }
 
     /// iPhone Duo inner display, landscape pose.
-    @Test func regularWidthLandscapeGoesSideBySide() {
-        let layout = EditorLayout.resolve(canvasSize: CGSize(width: 951, height: 669), isRegularWidth: true)
-        #expect(layout == .sideBySide(controlsWidth: 380))
-    }
-
-    @Test func controlsWidthIsCappedByFractionOnNarrowCanvases() {
-        let layout = EditorLayout.resolve(canvasSize: CGSize(width: 700, height: 500), isRegularWidth: true)
-        #expect(layout == .sideBySide(controlsWidth: 700 * 0.42))
+    @Test func duoLandscapeGoesSideBySide() {
+        #expect(EditorLayout.resolve(canvasSize: CGSize(width: 951, height: 669)) == .sideBySide(controlsWidth: 380))
     }
 
     @Test func controlsWidthIsCappedByMaximumOnWideCanvases() {
-        let layout = EditorLayout.resolve(canvasSize: CGSize(width: 1400, height: 900), isRegularWidth: true)
-        #expect(layout == .sideBySide(controlsWidth: 380))
+        #expect(EditorLayout.resolve(canvasSize: CGSize(width: 1400, height: 900)) == .sideBySide(controlsWidth: 380))
     }
 
     @Test func squareCanvasStacks() {
-        #expect(EditorLayout.resolve(canvasSize: CGSize(width: 800, height: 800), isRegularWidth: true) == .stacked)
+        #expect(EditorLayout.resolve(canvasSize: CGSize(width: 800, height: 800)) == .stacked)
     }
 
     @Test func degenerateSizesStack() {
-        #expect(EditorLayout.resolve(canvasSize: .zero, isRegularWidth: true) == .stacked)
-        #expect(EditorLayout.resolve(canvasSize: CGSize(width: 1, height: 0), isRegularWidth: true) == .stacked)
+        #expect(EditorLayout.resolve(canvasSize: .zero) == .stacked)
+        #expect(EditorLayout.resolve(canvasSize: CGSize(width: 1, height: 0)) == .stacked)
     }
 }
