@@ -44,7 +44,7 @@ CAPTIONS = [
     "AI restores the\nartwork underneath",
     "Your AI provider,\nyour key",
     "Or shoot it right\nin the app",
-    "Frame it with the\nsystem camera",
+    "Frame it with the\nin-app camera",
     "Straight from\nthe camera",
 ]
 

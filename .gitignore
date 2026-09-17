@@ -25,3 +25,4 @@ xcuserdata/
 .superpowers/
 *.log
 
+__pycache__/
