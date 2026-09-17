@@ -51,7 +51,7 @@ xcodebuild -exportArchive -archivePath /tmp/PictureFramer.xcarchive \
 #   the user uploads from there with Transporter (do not attempt the upload yourself).
 ```
 
-`ExportOptions.plist` (not checked in — recreate as needed): keys `method=app-store-connect`, `teamID=M9Y77E7ZX5`, `signingStyle=automatic`, `uploadSymbols=true`.
+`ExportOptions.plist` is checked in (no secrets — the team ID is already in `project.yml`): keys `method=app-store-connect`, `teamID=M9Y77E7ZX5`, `signingStyle=automatic`, `uploadSymbols=true`.
 
 Why unsigned-then-export: the team has **no registered devices** (user's iPhone is MDM-locked, no Developer Mode), so a normal automatically-signed archive fails with "Your team has no devices" — archive signing wants a *development* profile, which requires a device. Forcing `CODE_SIGN_IDENTITY="Apple Distribution"` on an automatic-signing archive fails with "conflicting provisioning settings" instead. App Store *distribution* signing needs no devices, and the team's Apple Distribution certificate is **cloud-managed** — it does NOT appear in `security find-identity`, so don't conclude it's missing; `-exportArchive -allowProvisioningUpdates` finds and uses it. Direct-to-device installs are impossible on the user's phone (MDM) — TestFlight is the only route onto hardware.
 
