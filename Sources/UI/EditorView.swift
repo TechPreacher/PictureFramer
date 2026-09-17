@@ -8,12 +8,15 @@ struct EditorView: View {
     @State private var lastPanTranslation: CGSize = .zero
     /// The corner currently being dragged — drives the magnifier loupe.
     @State private var activeCorner: Quad.Corner?
+    @Environment(\.editorCanvasIsShort) private var isShortCanvas
 
     var body: some View {
         AdaptiveEditorLayout {
             imageArea
         } controls: {
             controls
+        } actions: {
+            actions
         }
         .padding()
         .navigationTitle("Straighten")
@@ -116,7 +119,7 @@ struct EditorView: View {
 
     @ViewBuilder
     private var controls: some View {
-        VStack(spacing: 12) {
+        VStack(spacing: isShortCanvas ? 8 : 12) {
             if model.detectionFailed {
                 Label(
                     "Couldn't find the picture automatically — drag the corners onto its frame.",
@@ -173,24 +176,27 @@ struct EditorView: View {
                         .foregroundStyle(.secondary)
                 }
             }
+        }
+    }
 
-            HStack {
-                Button("Start Over", role: .cancel) {
-                    model.reset()
-                }
-                Spacer()
-                Button {
-                    Task { await model.export() }
-                } label: {
-                    if model.stage == .exporting {
-                        ProgressView()
-                    } else {
-                        Label("Save to Photos", systemImage: "square.and.arrow.down")
-                    }
-                }
-                .buttonStyle(.borderedProminent)
-                .disabled(model.stage == .exporting || model.quad == nil)
+    /// Primary actions — pinned below the controls in the side-by-side layout.
+    private var actions: some View {
+        HStack {
+            Button("Start Over", role: .cancel) {
+                model.reset()
             }
+            Spacer()
+            Button {
+                Task { await model.export() }
+            } label: {
+                if model.stage == .exporting {
+                    ProgressView()
+                } else {
+                    Label("Save to Photos", systemImage: "square.and.arrow.down")
+                }
+            }
+            .buttonStyle(.borderedProminent)
+            .disabled(model.stage == .exporting || model.quad == nil)
         }
     }
 }

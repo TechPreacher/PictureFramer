@@ -14,7 +14,11 @@ final class PictureFramerUITests: XCTestCase {
     /// permission to not-determined first (iOS 26 then auto-grants
     /// add-only saves without a prompt).
     @MainActor
-    private func launchAndPickNewestPhoto(resettingPhotosPermission: Bool = true) -> XCUIApplication {
+    private func launchAndPickNewestPhoto(
+        resettingPhotosPermission: Bool = true,
+        orientation: UIDeviceOrientation = .portrait
+    ) -> XCUIApplication {
+        XCUIDevice.shared.orientation = orientation
         let app = XCUIApplication()
         if resettingPhotosPermission {
             app.resetAuthorizationStatus(for: .photos)
@@ -104,6 +108,33 @@ final class PictureFramerUITests: XCTestCase {
         XCTAssertTrue(
             app.buttons["Choose Photo"].waitForExistence(timeout: 10),
             "picker screen did not return after reset"
+        )
+    }
+
+    /// Landscape: the editor goes side by side (image left, controls right)
+    /// and the whole flow still works, including the corner drag.
+    @MainActor
+    func testPickStraightenAndSaveFlowLandscape() throws {
+        defer { XCUIDevice.shared.orientation = .portrait }
+        let app = launchAndPickNewestPhoto(orientation: .landscapeLeft)
+        let saveButton = app.buttons["Save to Photos"]
+        XCTAssertTrue(saveButton.waitForExistence(timeout: 30), "editor did not appear in landscape")
+
+        let handle = app.descendants(matching: .any)["Top left corner"].firstMatch
+        XCTAssertTrue(handle.waitForExistence(timeout: 5), "corner handle missing in landscape")
+        let start = handle.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
+        start.press(forDuration: 0.1, thenDragTo: start.withOffset(CGVector(dx: 30, dy: 30)))
+
+        app.buttons["Preview"].tap()
+        XCTAssertTrue(app.staticTexts["Drag to pan image"].waitForExistence(timeout: 10), "preview missing in landscape")
+        XCTAssertTrue(saveButton.isHittable, "Save must stay reachable in landscape")
+        saveButton.tap()
+        let springboard = XCUIApplication(bundleIdentifier: "com.apple.springboard")
+        let allow = springboard.buttons["Allow"]
+        if allow.waitForExistence(timeout: 5) { allow.tap() }
+        XCTAssertTrue(
+            app.staticTexts["Saved to your photo library."].waitForExistence(timeout: 30),
+            "success screen did not appear in landscape"
         )
     }
 

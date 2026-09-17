@@ -41,28 +41,55 @@ struct ContentView: View {
                 SettingsView(settings: model.settings)
             }
             .fullScreenCover(isPresented: $showCamera) {
-                CameraPicker { data in
+                CameraCaptureView { data in
                     model.loadCapturedPhoto(data)
                 }
-                .ignoresSafeArea()
             }
         }
     }
 
+    /// Tall canvases stack hero, picker and buttons; wide ones (any device
+    /// in landscape) put the hero beside them so nothing scrolls off.
     private var pickerScreen: some View {
+        GeometryReader { proxy in
+            Group {
+                switch CanvasShape(size: proxy.size) {
+                case .tall:
+                    VStack(spacing: 24) {
+                        heroImage
+                            .frame(maxWidth: 520)
+                        pickerControls
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                case .wide:
+                    HStack(spacing: 24) {
+                        heroImage
+                            .frame(maxWidth: min(520, proxy.size.width * 0.5))
+                        pickerControls
+                            .frame(maxWidth: 420)
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                }
+            }
+            .padding()
+        }
+    }
+
+    private var heroImage: some View {
+        Image("OnboardingBeforeAfter")
+            .resizable()
+            .scaledToFit()
+            .clipShape(RoundedRectangle(cornerRadius: 16))
+            .accessibilityLabel("A crooked framed painting becomes perfectly straight")
+    }
+
+    private var pickerControls: some View {
         VStack(spacing: 24) {
-            Image("OnboardingBeforeAfter")
-                .resizable()
-                .scaledToFit()
-                .clipShape(RoundedRectangle(cornerRadius: 16))
-                .padding(.horizontal)
-                .accessibilityLabel("A crooked framed painting becomes perfectly straight")
             Picker("Crop mode", selection: $model.cropMode) {
                 Text("With Frame & Wall").tag(CropMode.framed)
                 Text("Painting Only").tag(CropMode.paintingOnly)
             }
             .pickerStyle(.segmented)
-            .padding(.horizontal)
             Text(
                 model.cropMode == .framed
                     ? "Pick a photo of a framed picture or painting. PictureFramer straightens it and keeps a strip of background around the frame."
@@ -71,7 +98,6 @@ struct ContentView: View {
             .font(.callout)
             .multilineTextAlignment(.center)
             .foregroundStyle(.secondary)
-            .padding(.horizontal)
             if let errorMessage = model.errorMessage {
                 Text(errorMessage)
                     .font(.footnote)
@@ -81,9 +107,9 @@ struct ContentView: View {
                 Label("Choose Photo", systemImage: "photo.on.rectangle")
             }
             .buttonStyle(.borderedProminent)
-            if CameraPicker.isAvailable {
+            if CameraSession.isAvailable {
                 Button {
-                    if CameraPicker.isAccessDenied {
+                    if CameraSession.isAccessDenied {
                         cameraDenied = true
                     } else {
                         cameraDenied = false
@@ -104,7 +130,6 @@ struct ContentView: View {
                 }
             }
         }
-        .padding()
     }
 
     private var exportedScreen: some View {

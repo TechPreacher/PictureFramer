@@ -1,29 +1,31 @@
 import CoreGraphics
 
-/// Decides how an editor screen arranges its image area and its controls.
+/// How an editor screen arranges its image area and its controls.
 ///
-/// Phones (compact width) always stack. Wide canvases with a regular
-/// horizontal size class — iPad, iPhone Duo's inner display in landscape,
-/// or a wide Split View pane — put the controls beside the image so the
-/// picture keeps its height. A tall regular-width canvas (Duo inner display
-/// in portrait) still stacks: the image has room and a narrow side column
-/// would waste width. Decided on size classes and geometry, never on
-/// interface orientation, as Apple recommends for iPhone Duo.
+/// Tall canvases (any phone in portrait, iPad in portrait, iPhone Duo's
+/// inner display in portrait) stack the controls under the image. Wide
+/// canvases (any device in landscape, a wide Split View pane) put the
+/// controls in a side column so the picture keeps the full height — on a
+/// phone in landscape the stack would leave under 100 pt for the image.
 enum EditorLayout: Equatable, Sendable {
     case stacked
     case sideBySide(controlsWidth: CGFloat)
 
-    /// Preferred width of the side column, capped so segmented pickers and
-    /// sliders don't stretch.
+    /// Cap on the side column so segmented pickers and sliders don't stretch.
     static let maxControlsWidth: CGFloat = 380
-    /// Fraction of the canvas width the side column may take at most.
+    /// The side column may take at most this fraction of the canvas width.
     static let maxControlsFraction: CGFloat = 0.42
+    /// On short canvases (a phone in landscape) the column gets half the
+    /// width instead, so two-line labels collapse to one line and the whole
+    /// control stack fits the height without scrolling.
+    static let shortCanvasHeight: CGFloat = 500
+    static let shortCanvasControlsFraction: CGFloat = 0.5
 
-    static func resolve(canvasSize: CGSize, isRegularWidth: Bool) -> EditorLayout {
-        guard isRegularWidth,
-              canvasSize.width > canvasSize.height,
-              canvasSize.height > 0 else { return .stacked }
-        let width = min(maxControlsWidth, canvasSize.width * maxControlsFraction)
+    static func resolve(canvasSize: CGSize) -> EditorLayout {
+        guard CanvasShape(size: canvasSize) == .wide else { return .stacked }
+        let fraction = canvasSize.height < shortCanvasHeight
+            ? shortCanvasControlsFraction : maxControlsFraction
+        let width = min(maxControlsWidth, canvasSize.width * fraction)
         return .sideBySide(controlsWidth: width)
     }
 }
