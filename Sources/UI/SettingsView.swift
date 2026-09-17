@@ -9,6 +9,7 @@ struct SettingsView: View {
     @State private var selectedProvider: AIProvider?
     @State private var keys: [AIProvider: String] = [:]
     @State private var validationState: [AIProvider: ValidationState] = [:]
+    @AppStorage(AppAppearance.defaultsKey) private var appearance: AppAppearance = .system
 
     private let validator = ProviderKeyValidator()
 
@@ -21,6 +22,19 @@ struct SettingsView: View {
     var body: some View {
         NavigationStack {
             Form {
+                Section {
+                    Picker("Appearance", selection: $appearance) {
+                        ForEach(AppAppearance.allCases, id: \.self) { option in
+                            Text(option.displayName).tag(option)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+                } header: {
+                    Text("Appearance")
+                } footer: {
+                    Text("System follows the device's light or dark setting.")
+                }
+
                 Section {
                     Picker("Provider", selection: $selectedProvider) {
                         Text("None").tag(AIProvider?.none)
@@ -62,6 +76,7 @@ struct SettingsView: View {
                 }
             }
             .onAppear(perform: load)
+            .onChange(of: appearance) { _, new in AppearanceApplier.apply(new) }
         }
     }
 
