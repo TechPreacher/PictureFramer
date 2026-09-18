@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>PictureFramer — Straighten photos of framed paintings</title>
-<meta name="description" content="PictureFramer for iPhone finds the frame in your photo of a painting, straightens the perspective, and keeps a clean strip of wall around it. Museum photos, perfected.">
+<meta name="description" content="PictureFramer for iPhone and iPad finds the frame in your photo of a painting, straightens the perspective, and keeps a clean strip of wall around it. Museum photos, perfected.">
 <link rel="canonical" href="https://pictureframer.corti.com/">
 <link rel="icon" type="image/png" href="assets/favicon.png">
 <meta property="og:title" content="PictureFramer — Straighten photos of framed paintings">
@@ -97,6 +97,8 @@
   .steps-3 { grid-template-columns: repeat(auto-fit, minmax(200px, 240px)); justify-content: center; }
   .steps-2 { grid-template-columns: repeat(auto-fit, minmax(240px, 300px)); justify-content: center; gap: 3rem 3rem; }
   #crop-mode .step img { max-width: 280px; }
+  .steps-wide { grid-template-columns: repeat(auto-fit, minmax(240px, 316px)); justify-content: center; align-items: center; }
+  .steps-wide .step img.wide { max-width: 316px; border-radius: 16px; }
   #reflections img.reflection-hero {
     display: block;
     max-width: min(720px, 100%);
@@ -182,7 +184,7 @@
   <h1>PictureFramer</h1>
   <p class="tagline">Photograph a painting at an angle. Get it back <span class="gold">perfectly straight</span> — frame, wall and all.</p>
   <img class="before-after" src="assets/before-after.png" alt="Before and after: a crooked photo of a framed painting becomes perfectly rectangular">
-  <p class="availability">For iPhone · iOS 17 or later</p>
+  <p class="availability">For iPhone and iPad · iOS 17 or later · portrait and landscape</p>
 </header>
 
 <main>
@@ -229,15 +231,37 @@
       </div>
       <div class="step">
         <span class="num">2</span>
-        <img src="assets/camera-viewfinder.png" alt="System camera viewfinder aimed at a painting hanging on a wall" loading="lazy">
-        <h3>Frame it with the camera</h3>
-        <p>The familiar iOS camera — flash, zoom, and retake included.</p>
+        <img src="assets/camera-viewfinder.png" alt="The app's own camera viewfinder aimed at a painting hanging on a wall, shutter button below" loading="lazy">
+        <h3>Frame it with the app's camera</h3>
+        <p>A clean viewfinder and one shutter. Turn the phone sideways for a wide painting — the camera follows, and the shot comes out upright.</p>
       </div>
       <div class="step">
         <span class="num">3</span>
         <img src="assets/camera-straighten.png" alt="Straighten screen showing automatically detected corners on the freshly captured photo" loading="lazy">
         <h3>Straighten as usual</h3>
         <p>The capture lands in the editor like any picked photo. The original shot is never saved — only your straightened result is.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="anywhere">
+    <h2>Any way you hold it</h2>
+    <p class="lead">Portrait or landscape, iPhone or iPad, light or dark — every screen rearranges itself instead of just stretching. Turn a phone sideways and the controls move beside the picture, so a wide painting gets the whole height of the screen.</p>
+    <div class="steps steps-wide">
+      <div class="step">
+        <img class="wide" src="assets/landscape-iphone.png" alt="iPhone in landscape: the editor shows the photo on the left with the controls in a column on the right" loading="lazy">
+        <h3>Landscape on iPhone</h3>
+        <p>Controls slide into a side column; Save is always within reach.</p>
+      </div>
+      <div class="step">
+        <img class="wide" src="assets/landscape-ipad.png" alt="iPad in landscape: the straightened preview fills the height with the controls beside it" loading="lazy">
+        <h3>Native on iPad</h3>
+        <p>The same app, sized for the big screen — not a blown-up phone layout.</p>
+      </div>
+      <div class="step">
+        <img src="assets/dark-mode.png" alt="Start screen in dark mode" loading="lazy">
+        <h3>Light, dark, or system</h3>
+        <p>Pick an appearance in Settings, or let it follow your device.</p>
       </div>
     </div>
   </section>
@@ -298,7 +322,7 @@
           </ul>
         </li>
         <li><strong>Open Settings in the app</strong> (gear icon on the start screen), pick your provider, paste the key, and tap <em>Validate Key</em>.</li>
-        <li><strong>That's it.</strong> The key is stored in your iPhone's Keychain and used only when you tap Remove. A typical removal costs a few cents, billed by your provider.</li>
+        <li><strong>That's it.</strong> The key is stored in your device's Keychain and used only when you tap Remove. A typical removal costs a few cents, billed by your provider.</li>
       </ol>
       <p class="setup-note">Seeing “Rate-limited by the provider … check your plan and billing details” with Gemini? That's the free-tier quota, not actual rate limiting — upgrade the plan or switch to OpenAI.</p>
     </div>
@@ -326,7 +350,11 @@
       </div>
       <div class="feature">
         <h3>Shoot it in-app</h3>
-        <p>Take the photo with the system camera without leaving the app. The capture feeds straight into detection — only the straightened result lands in your library.</p>
+        <p>Take the photo with the app's own camera, in portrait or landscape. The capture feeds straight into detection — only the straightened result lands in your library.</p>
+      </div>
+      <div class="feature">
+        <h3>iPhone and iPad, any orientation</h3>
+        <p>Every screen adapts to portrait and landscape on both devices, and to light or dark appearance.</p>
       </div>
       <div class="feature">
         <h3>Works without a frame</h3>
@@ -338,7 +366,7 @@
       </div>
       <div class="feature">
         <h3>Private by design</h3>
-        <p>Straightening happens entirely on your iPhone — no accounts, no tracking. The optional reflection remover sends only the marked region to the AI provider you pick, with your own key, only when you tap Remove.</p>
+        <p>Straightening happens entirely on your device — no accounts, no tracking. The optional reflection remover sends only the marked region to the AI provider you pick, with your own key, only when you tap Remove.</p>
       </div>
       <div class="feature">
         <h3>Shadow-proof</h3>
