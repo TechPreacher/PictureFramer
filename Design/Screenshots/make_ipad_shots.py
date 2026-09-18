@@ -7,7 +7,7 @@ black iPad device frame with the screenshot inside. Canvas 2064x2752
 Usage:  python3 make_ipad_shots.py [source-folder]
 
 Source folder (default ~/Temp) must contain raw 2064x2752 screenshots named
-iPad_1.png .. iPad_8.png, in the order of the SHOTS table below. Entries with
+iPad_1.png .. iPad_11.png, in the order of the SHOTS table below. Entries with
 mode "plain" (e.g. an exported artwork rather than an app screenshot) are
 shown directly on the background without a device frame. Output goes to
 Design/Screenshots/iPad/PictureFramer_NN.png.
@@ -38,14 +38,14 @@ INNER_RADIUS = 80
 SHOTS = [
     ("iPad_1.png", "Museum photos,\nperfected", "device"),
     ("iPad_2.png", "The frame is found\nfor you", "device"),
-    ("iPad_3.png", "Straight — with real\nwall around it", "device"),
+    ("iPad_3.png", "Straight, with real\nwall around it", "device"),
     ("iPad_4.png", "Full resolution, back\nin your library", "device"),
     ("iPad_5.png", "Glare on the glass?", "device"),
-    ("iPad_6.png", "Mark it — zoom in\nfor fine work", "device"),
+    ("iPad_6.png", "Mark it, zoom in\nfor fine work", "device"),
     ("iPad_7.png", "AI restores the\nartwork underneath", "device"),
     ("iPad_8.png", "Your AI provider,\nyour key", "device"),
     ("iPad_9.png", "Or shoot it right\nin the app", "device"),
-    ("iPad_10.png", "Frame it with the\nsystem camera", "device"),
+    ("iPad_10.png", "Frame it with the\napp’s own camera", "device"),
     ("iPad_11.png", "Straight from\nthe camera", "device"),
 ]
 
