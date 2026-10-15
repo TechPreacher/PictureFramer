@@ -153,6 +153,11 @@ final class PictureFramerUITests: XCTestCase {
         app.buttons["Take Photo"].firstMatch.tap()
         let shutter = app.buttons["Take Photo"].firstMatch
         XCTAssertTrue(app.buttons["Cancel"].waitForExistence(timeout: 5), "camera view did not open")
+        // No camera hardware → no zoom range: a pinch must be a harmless
+        // no-op and the factor label must stay hidden.
+        app.pinch(withScale: 2, velocity: 1)
+        XCTAssertTrue(shutter.isHittable, "shutter unreachable after pinching the preview")
+        XCTAssertFalse(app.staticTexts["Zoom factor"].exists, "zoom label must be hidden without a zoom range")
 
         XCUIDevice.shared.orientation = .landscapeLeft
         Thread.sleep(forTimeInterval: 2)
