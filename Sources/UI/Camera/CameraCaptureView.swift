@@ -11,6 +11,10 @@ import UIKit
 /// a new identity, tear down the `UIView` whose layer is the session's
 /// preview layer, and create another — on device that blanks the preview
 /// and can crash when the old layer deallocates under a running session.
+///
+/// Pinching the preview zooms through the device's lenses (`CameraZoomRange`);
+/// the gesture and the factor label are modifiers on the one `CameraPreview`,
+/// never a layout branch.
 struct CameraCaptureView: View {
     /// Called with the JPEG data of the capture.
     let onCapture: (Data) -> Void
@@ -18,6 +22,9 @@ struct CameraCaptureView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var camera = CameraSession()
     @State private var isCapturing = false
+    @State private var zoomRange: CameraZoomRange?
+    @State private var zoomFactor: CGFloat = 1
+    @GestureState private var zoomAtGestureStart: CGFloat?
 
     private let barSize: CGFloat = 112
 
@@ -38,7 +45,13 @@ struct CameraCaptureView: View {
         }
         .statusBarHidden()
         .preferredColorScheme(.dark)
-        .onAppear { camera.start() }
+        .onAppear {
+            camera.onZoomRangeReady = { range in
+                zoomRange = range
+                zoomFactor = range.defaultFactor
+            }
+            camera.start()
+        }
         .onDisappear { camera.stop() }
     }
 
@@ -46,6 +59,39 @@ struct CameraCaptureView: View {
         CameraPreview(session: camera)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .accessibilityLabel("Camera preview")
+            .gesture(zoomGesture)
+            .overlay(alignment: .bottom) { zoomLabel }
+    }
+
+    /// Pinch to zoom. `zoomAtGestureStart` is a `@GestureState` seeded with
+    /// the committed zoom when the gesture begins; every update scales from
+    /// it so the pinch feels absolute, and SwiftUI resets it on end and on
+    /// cancel. Without a range (single lens, simulator) it does nothing.
+    private var zoomGesture: some Gesture {
+        MagnifyGesture()
+            .updating($zoomAtGestureStart) { _, state, _ in
+                if state == nil { state = zoomFactor }
+            }
+            .onChanged { value in
+                guard let range = zoomRange else { return }
+                let start = zoomAtGestureStart ?? zoomFactor
+                zoomFactor = range.pinched(from: start, by: value.magnification)
+                camera.setZoom(zoomFactor)
+            }
+    }
+
+    @ViewBuilder
+    private var zoomLabel: some View {
+        if let range = zoomRange, range.isZoomable {
+            Text(range.displayLabel(for: zoomFactor))
+                .font(.caption.weight(.semibold).monospacedDigit())
+                .foregroundStyle(.white)
+                .padding(.horizontal, 10)
+                .padding(.vertical, 5)
+                .background(.black.opacity(0.5), in: Capsule())
+                .padding(.bottom, 12)
+                .accessibilityIdentifier("Zoom factor")
+        }
     }
 
     @ViewBuilder
