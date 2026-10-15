@@ -5,7 +5,9 @@ import Foundation
 /// `UIImagePickerController`, whose camera UI is portrait-only: this
 /// session follows the device orientation via `RotationCoordinator`, so
 /// the preview rotates and captures come out correctly oriented (EXIF)
-/// in landscape as well. Output is JPEG data for `EditorViewModel.load(data:)`;
+/// in landscape as well. The session opens the virtual multi-camera device
+/// where available so that `videoZoomFactor` switches physical lenses; see
+/// `CameraZoomRange`. Output is JPEG data for `EditorViewModel.load(data:)`;
 /// nothing is written to the photo library.
 final class CameraSession: NSObject, AVCapturePhotoCaptureDelegate, @unchecked Sendable {
     let session = AVCaptureSession()
@@ -18,6 +20,14 @@ final class CameraSession: NSObject, AVCapturePhotoCaptureDelegate, @unchecked S
     private var rotationObservation: NSKeyValueObservation?
     private var pendingCapture: ((Data?) -> Void)?
     private var isConfigured = false
+    private var zoomRange: CameraZoomRange?
+
+    /// Delivered once on the main queue after the session configures, so the
+    /// view can show the zoom label and bound the pinch gesture. Set it before
+    /// `start()`; it is consumed (and cleared) on the first `start()` so the
+    /// closure cannot keep the view alive. Never called when no camera
+    /// configures (simulator).
+    var onZoomRangeReady: ((CameraZoomRange) -> Void)?
 
     /// False in the simulator and on devices without a back camera; the
     /// UI hides the Take Photo button entirely.
@@ -66,8 +76,23 @@ final class CameraSession: NSObject, AVCapturePhotoCaptureDelegate, @unchecked S
         }
     }
 
+    /// The most capable back camera: a virtual multi-camera device where
+    /// available, so `videoZoomFactor` switches physical lenses (ultra-wide
+    /// → wide → telephoto); the bare wide-angle camera otherwise.
+    private static var backCamera: AVCaptureDevice? {
+        let types: [AVCaptureDevice.DeviceType] = [
+            .builtInTripleCamera, .builtInDualWideCamera, .builtInDualCamera, .builtInWideAngleCamera,
+        ]
+        for type in types {
+            if let device = AVCaptureDevice.default(type, for: .video, position: .back) { return device }
+        }
+        return nil
+    }
+
     private func configure() {
-        guard let device = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .back),
+        let callback = onZoomRangeReady
+        onZoomRangeReady = nil
+        guard let device = Self.backCamera,
               let input = try? AVCaptureDeviceInput(device: device) else { return }
         session.beginConfiguration()
         session.sessionPreset = .photo
@@ -79,6 +104,14 @@ final class CameraSession: NSObject, AVCapturePhotoCaptureDelegate, @unchecked S
         session.commitConfiguration()
         self.device = device
         isConfigured = true
+        let range = CameraZoomRange(
+            minimum: device.minAvailableVideoZoomFactor,
+            maxAvailable: device.maxAvailableVideoZoomFactor,
+            switchOverFactors: device.virtualDeviceSwitchOverVideoZoomFactors.map { CGFloat($0.doubleValue) },
+            hasUltraWide: device.constituentDevices.contains { $0.deviceType == .builtInUltraWideCamera })
+        zoomRange = range
+        apply(zoomFactor: range.defaultFactor, to: device)
+        DispatchQueue.main.async { callback?(range) }
         makeRotationCoordinatorIfReady()
     }
 
@@ -98,6 +131,27 @@ final class CameraSession: NSObject, AVCapturePhotoCaptureDelegate, @unchecked S
                 connection.videoRotationAngle = angle
             }
         }
+    }
+
+    // MARK: Zoom
+
+    /// Sets the device zoom (preview and capture alike). Clamped to the
+    /// app's range and then to the device's own limits; no-op before the
+    /// session has configured.
+    func setZoom(_ factor: CGFloat) {
+        sessionQueue.async { [self] in
+            guard let device, let zoomRange else { return }
+            apply(zoomFactor: zoomRange.clamped(factor), to: device)
+        }
+    }
+
+    /// AVFoundation raises on a factor outside the device's available range,
+    /// so clamp to the device's own bounds here regardless of the caller.
+    private func apply(zoomFactor: CGFloat, to device: AVCaptureDevice) {
+        let factor = min(max(zoomFactor, device.minAvailableVideoZoomFactor), device.maxAvailableVideoZoomFactor)
+        guard (try? device.lockForConfiguration()) != nil else { return }
+        device.videoZoomFactor = factor
+        device.unlockForConfiguration()
     }
 
     // MARK: Capture
