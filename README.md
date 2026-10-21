@@ -19,12 +19,13 @@ Photograph a painting in a museum or at home — the photo is usually shot at an
   - OpenAI: any API key with image access works.
   - Google Gemini: the key's project must be on a **paid/billed tier** — the image model has no free-tier quota, so free AI Studio keys validate fine but every removal fails with a quota (HTTP 429) error. Enable billing in Google AI Studio / Cloud Console first.
 - Works with unframed canvases too — anything with a detectable rectangular outline.
+- **iPhone Duo ready**: every screen lays itself out by canvas shape, so the app works closed, open, half-folded (book and table poses) and in Split View on the inner display. On the outer display the system moves the toolbar to the side; on the wide inner display the editor puts its controls beside the image.
 
 ## Requirements
 
-- Xcode 27+ (iOS 27.0 simulator platform; run `xcodebuild -downloadPlatform iOS` if destinations come up empty)
+- Xcode 27.1+ (iOS 27.1 SDK). Simulator runtimes: iOS 27.0 for the iPhone 18 Pro destinations below, iOS 27.1 for the iPhone Duo simulator; run `xcodebuild -downloadPlatform iOS` if destinations come up empty
 - [XcodeGen](https://github.com/yonaskolb/XcodeGen) (`brew install xcodegen`)
-- iOS 17.0+ deployment target, iPhone and iPad, portrait and landscape
+- iOS 17.0+ deployment target, iPhone (including iPhone Duo) and iPad, portrait and landscape
 - Optional: an OpenAI or Google Gemini API key (entered in the app's Settings) to use reflection removal — everything else works without it
 
 ## Building
