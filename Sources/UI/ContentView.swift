@@ -32,9 +32,8 @@ struct ContentView: View {
                     Button {
                         showSettings = true
                     } label: {
-                        Image(systemName: "gearshape")
+                        Label("Settings", systemImage: "gearshape")
                     }
-                    .accessibilityLabel("Settings")
                 }
             }
             .sheet(isPresented: $showSettings, onDismiss: { model.refreshProviderConfiguration() }) {
