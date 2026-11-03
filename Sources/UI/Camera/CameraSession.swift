@@ -1,5 +1,6 @@
 import AVFoundation
 import Foundation
+import os
 
 /// Thin AVFoundation capture session for the in-app camera. Replaces
 /// `UIImagePickerController`, whose camera UI is portrait-only: this
@@ -18,9 +19,12 @@ final class CameraSession: NSObject, AVCapturePhotoCaptureDelegate, @unchecked S
     private weak var previewLayer: AVCaptureVideoPreviewLayer?
     private var rotationCoordinator: AVCaptureDevice.RotationCoordinator?
     private var rotationObservation: NSKeyValueObservation?
-    private var pendingCapture: ((Data?) -> Void)?
+    private var pendingCapture: ((Result<Data, CameraCaptureError>) -> Void)?
     private var isConfigured = false
     private var zoomRange: CameraZoomRange?
+
+    private static let logger = Logger(
+        subsystem: Bundle.main.bundleIdentifier ?? "PictureFramer", category: "Camera")
 
     /// Delivered once on the main queue after the session configures, so the
     /// view can show the zoom label and bound the pinch gesture. Set it before
@@ -149,19 +153,36 @@ final class CameraSession: NSObject, AVCapturePhotoCaptureDelegate, @unchecked S
     /// so clamp to the device's own bounds here regardless of the caller.
     private func apply(zoomFactor: CGFloat, to device: AVCaptureDevice) {
         let factor = min(max(zoomFactor, device.minAvailableVideoZoomFactor), device.maxAvailableVideoZoomFactor)
-        guard (try? device.lockForConfiguration()) != nil else { return }
+        do {
+            try device.lockForConfiguration()
+        } catch {
+            let nsError = error as NSError
+            Self.logger.error(
+                "lockForConfiguration failed for zoom \(Double(factor), privacy: .public): \(nsError.domain, privacy: .public) \(nsError.code, privacy: .public) \(nsError.localizedDescription, privacy: .public)")
+            return
+        }
         device.videoZoomFactor = factor
         device.unlockForConfiguration()
     }
 
     // MARK: Capture
 
-    /// Takes one JPEG. The completion runs on the main queue with `nil` on
-    /// failure.
-    func capture(completion: @escaping (Data?) -> Void) {
+    /// Takes one JPEG. The completion runs on the main queue with the JPEG
+    /// data, or the reason the capture failed.
+    func capture(completion: @escaping (Result<Data, CameraCaptureError>) -> Void) {
         sessionQueue.async { [self] in
-            guard isConfigured, pendingCapture == nil else {
-                DispatchQueue.main.async { completion(nil) }
+            Self.logger.info(
+                "capture: videoZoomFactor=\(Double(self.device?.videoZoomFactor ?? -1), privacy: .public) activePrimaryConstituent=\(self.device?.activePrimaryConstituent?.deviceType.rawValue ?? "nil", privacy: .public) deviceType=\(self.device?.deviceType.rawValue ?? "nil", privacy: .public)")
+            let rejection: CameraCaptureError? = if !isConfigured {
+                .notConfigured
+            } else if pendingCapture != nil {
+                .captureInProgress
+            } else {
+                nil
+            }
+            if let rejection {
+                Self.logger.error("capture rejected: \(rejection.errorDescription ?? "", privacy: .public)")
+                DispatchQueue.main.async { completion(.failure(rejection)) }
                 return
             }
             pendingCapture = completion
@@ -182,11 +203,22 @@ final class CameraSession: NSObject, AVCapturePhotoCaptureDelegate, @unchecked S
         didFinishProcessingPhoto photo: AVCapturePhoto,
         error: Error?
     ) {
-        let data = error == nil ? photo.fileDataRepresentation() : nil
+        let result: Result<Data, CameraCaptureError>
+        if let error {
+            let nsError = error as NSError
+            Self.logger.error(
+                "didFinishProcessingPhoto error: \(nsError.domain, privacy: .public) \(nsError.code, privacy: .public) \(nsError.localizedDescription, privacy: .public)")
+            result = .failure(.capture(underlying: nsError))
+        } else if let data = photo.fileDataRepresentation() {
+            result = .success(data)
+        } else {
+            Self.logger.error("didFinishProcessingPhoto: no fileDataRepresentation")
+            result = .failure(.noImageData)
+        }
         sessionQueue.async { [self] in
             let completion = pendingCapture
             pendingCapture = nil
-            DispatchQueue.main.async { completion?(data) }
+            DispatchQueue.main.async { completion?(result) }
         }
     }
 }
