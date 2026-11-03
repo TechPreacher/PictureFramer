@@ -32,15 +32,15 @@ xcrun simctl addmedia booted <some-framed-picture>.jpg   # seed the photo librar
 xcrun simctl launch booted com.corti.PictureFramer
 ```
 
-Xcode 27.1 (iOS 27.1 SDK) with the iOS 27.0 and 27.1 simulator runtimes installed (`xcodebuild -downloadPlatform iOS` fetches the current one if destinations come up empty). The iOS 27.0 runtime ships iPhone 18 Pro / 18 Pro Max / 17 / 17e / Air — there is no iPhone 17 Pro, so always pin `OS=27.0` in the destination or you silently hit a leftover iOS 26.x device.
+Xcode 27.2 (iOS 27.2 SDK; updated 2026-11-03 from 27.1) with the iOS 27.0 and 27.1 simulator runtimes installed — there is no 27.2 runtime, so destinations stay on 27.0 / 27.1 (`xcodebuild -downloadPlatform iOS` fetches the current one if destinations come up empty). The iOS 27.0 runtime ships iPhone 18 Pro / 18 Pro Max / 17 / 17e / Air — there is no iPhone 17 Pro, so always pin `OS=27.0` in the destination or you silently hit a leftover iOS 26.x device.
 
 ### iPhone Duo simulator
 
-Xcode 27.1 replaced Simulator.app with **Device Hub** (`/Applications/Xcode.app/Contents/Applications/DeviceHub.app`); `open -a Simulator` fails. The `iPhone Duo` device type requires the iOS 27.1 runtime (`simctl create` on 27.0 fails with "Incompatible device"); the runtime download creates one Duo device automatically. Build with `-destination 'platform=iOS Simulator,name=iPhone Duo,OS=27.1'`. Poses (closed / half / open, rotate) and Split View are only reachable through Device Hub's on-screen buttons — there is no `simctl` fold command and System Events cannot read Device Hub's menus. The Duo boots folded, so `simctl io <id> screenshot` defaults to the outer 466×678 pt display (1398×2034 @3x) and captures black once the device is open; pass `--display=<uuid>` of the 2007×2853 display (from `simctl io <id> enumerate`) for the inner 669×951 pt screen.
+Xcode 27.1+ replaced Simulator.app with **Device Hub** (`/Applications/Xcode.app/Contents/Applications/DeviceHub.app`); `open -a Simulator` fails. The `iPhone Duo` device type requires the iOS 27.1 runtime (`simctl create` on 27.0 fails with "Incompatible device"); the runtime download creates one Duo device automatically. Build with `-destination 'platform=iOS Simulator,name=iPhone Duo,OS=27.1'`. Poses (closed / half / open, rotate) and Split View are only reachable through Device Hub's on-screen buttons — there is no `simctl` fold command and System Events cannot read Device Hub's menus. The Duo boots folded, so `simctl io <id> screenshot` defaults to the outer 466×678 pt display (1398×2034 @3x) and captures black once the device is open; pass `--display=<uuid>` of the 2007×2853 display (from `simctl io <id> enumerate`) for the inner 669×951 pt screen.
 
 ### TestFlight .ipa
 
-First bump `CFBundleShortVersionString`/`CFBundleVersion` in `project.yml` (App Store Connect rejects duplicate build numbers, and a version that is already on the App Store needs a new `CFBundleShortVersionString` too), commit, `xcodegen generate`. Builds since 1.7.1 (build 12) are compiled with the iOS 27.1 SDK, which iPhone Duo needs for its edge-to-edge layout tier. Then:
+First bump `CFBundleShortVersionString`/`CFBundleVersion` in `project.yml` (App Store Connect rejects duplicate build numbers, and a version that is already on the App Store needs a new `CFBundleShortVersionString` too), commit, `xcodegen generate`. Builds since 1.7.1 (build 12) are compiled with the iOS 27.1+ SDK, which iPhone Duo needs for its edge-to-edge layout tier; 1.7.2 (build 13) is the first on the 27.2 SDK. After an Xcode update, kill a stale `com.apple.CoreSimulator.CoreSimulatorService` if no simulator will boot. Then:
 
 ```sh
 # 1. Archive UNSIGNED — do not use normal automatic signing (see why below)
