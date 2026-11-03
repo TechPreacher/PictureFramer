@@ -24,6 +24,8 @@ struct CameraCaptureView: View {
     @State private var isCapturing = false
     @State private var zoomRange: CameraZoomRange?
     @State private var zoomFactor: CGFloat = 1
+    /// Set when a capture fails; drives the diagnostic "Capture failed" alert.
+    @State private var captureFailure: String?
     @GestureState private var zoomAtGestureStart: CGFloat?
 
     private let barSize: CGFloat = 112
@@ -53,6 +55,25 @@ struct CameraCaptureView: View {
             camera.start()
         }
         .onDisappear { camera.stop() }
+        .alert(
+            "Capture failed",
+            isPresented: Binding(
+                get: { captureFailure != nil },
+                set: { if !$0 { captureFailure = nil } }),
+            presenting: captureFailure
+        ) { _ in
+            Button("OK", role: .cancel) {}
+        } message: { message in
+            Text(message)
+        }
+    }
+
+    /// Error text plus the zoom it happened at: the on-screen factor and the
+    /// raw `videoZoomFactor` the session was asked for.
+    private func failureMessage(for error: CameraCaptureError) -> String {
+        let shown = zoomRange?.displayLabel(for: zoomFactor) ?? String(format: "%.1f×", Double(zoomFactor))
+        let raw = String(format: "%.2f", Double(zoomFactor))
+        return "\(error.errorDescription ?? "Unknown error.") (at \(shown), videoZoomFactor \(raw))"
     }
 
     private var preview: some View {
@@ -112,11 +133,14 @@ struct CameraCaptureView: View {
         Button {
             guard !isCapturing else { return }
             isCapturing = true
-            camera.capture { data in
+            camera.capture { result in
                 isCapturing = false
-                if let data {
+                switch result {
+                case let .success(data):
                     onCapture(data)
                     dismiss()
+                case let .failure(error):
+                    captureFailure = failureMessage(for: error)
                 }
             }
         } label: {
